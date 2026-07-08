@@ -1,0 +1,81 @@
+#!/usr/bin/env python3
+"""Phase 3: the real thing. Ties EEG (or --mock), the optimizer, and the
+generator (procedural or --backend diffusion) together via the Orchestrator,
+optionally serving frames to a frontend over websockets (--serve).
+"""
+
+from __future__ import annotations
+
+import argparse
+import asyncio
+import base64
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from src.common.config import Config, emotiv_credentials
+from src.generator.service import GeneratorService
+from src.orchestrator.orchestrator import LocalOrchestrator, WebSocketOrchestrator
+from src.signal_service.eeg_sources import EmotivCortexSource, MockEEGSource
+from src.signal_service.service import build_faa_service
+
+OUT_DIR = Path(__file__).resolve().parents[1] / "data" / "processed"
+
+
+def _save_frame(frame_msg) -> None:
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    with open(OUT_DIR / "live_frame.png", "wb") as f:
+        f.write(base64.b64decode(frame_msg.frame_b64))
+
+
+async def run_local(config: Config, eeg_source) -> None:
+    signal_service = build_faa_service(config, eeg_source)
+    generator = GeneratorService(config)
+    orchestrator = LocalOrchestrator(config, signal_service, generator, on_frame=_save_frame)
+    print("[demo] calibrating baseline...")
+    await orchestrator.calibrate()
+    print("[demo] running - writing frames to", OUT_DIR / "live_frame.png")
+    await orchestrator.run()
+    print(f"[demo] state={orchestrator.optimizer.state_machine.state} "
+          f"steps={orchestrator.optimizer.state_machine.step_index}")
+
+
+async def run_served(config: Config) -> None:
+    generator = GeneratorService(config)
+    hub = WebSocketOrchestrator(config, generator)
+    print(f"[demo] serving on ws://{hub.host}:{hub.port} "
+          "(Signal service connects with {\"role\": \"signal\"}, frontend with {\"role\": \"display\"})")
+    await hub.serve_forever()
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--mock", action="store_true", help="use synthetic EEG instead of real hardware")
+    parser.add_argument("--backend", choices=["procedural", "diffusion"], default=None)
+    parser.add_argument("--serve", action="store_true", help="run the websocket hub instead of local mode")
+    args = parser.parse_args()
+
+    config = Config.load()
+    if args.backend:
+        config.generator.backend = args.backend
+
+    if args.serve:
+        asyncio.run(run_served(config))
+        return
+
+    if args.mock:
+        eeg_source = MockEEGSource(config.eeg.channels, config.eeg.sample_rate_hz)
+    else:
+        client_id, client_secret = emotiv_credentials()
+        eeg_source = EmotivCortexSource(client_id, client_secret)
+    eeg_source.connect()
+
+    try:
+        asyncio.run(run_local(config, eeg_source))
+    finally:
+        eeg_source.close()
+
+
+if __name__ == "__main__":
+    main()

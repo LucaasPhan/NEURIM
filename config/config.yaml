@@ -1,8 +1,9 @@
 # NEURIM configuration
-# Placeholders — tune during calibration (Phase 2) before connecting real hardware.
+# Real hardware/model defaults live here; secrets (EMOTIV_CLIENT_ID/SECRET)
+# come from the environment (.env), never from this file.
 
-emotiv:
-  # EMOTIV_CLIENT_ID / EMOTIV_CLIENT_SECRET are read from environment (.env), not here.
+eeg:
+  # EMOTIV_CLIENT_ID / EMOTIV_CLIENT_SECRET are read from environment (.env).
   device: "EPOC_X"
   # 14-channel EPOC X montage (10-20 system, international naming)
   channels:
@@ -22,28 +23,57 @@ emotiv:
     - AF4
   sample_rate_hz: 128
 
-flicker:
-  # One entry per candidate slot shown in the frontend; frequencies chosen to avoid
-  # harmonics/sub-harmonics overlap for reliable CCA-based SSVEP separation.
-  candidate_slots: 4
-  frequencies_hz:
-    - 7.5
-    - 8.57
-    - 10.0
-    - 12.0
-  duty_cycle: 0.5
+# Frontal alpha asymmetry: the entire reward signal, r(t).
+# FAA = ln(power_F4) - ln(power_F3), z-scored against the session baseline.
+faa:
+  channel_left: "F3"
+  channel_right: "F4"
+  band_hz: [8.0, 13.0]
+  window_s: 2.0            # sliding window per FAA reading
+  update_interval_s: 0.25  # ~4 readings/sec
+  baseline_duration_s: 30.0
+  clip: [-1.0, 1.0]
+
+# The Optimizer: searches a low-dim projection of the latent space, not the
+# raw latent directly. 8 dims (the favorable end of the spec's 8-16 range)
+# converges noticeably more reliably than 12+ within a demo-length step
+# budget - see tests/test_optimizer.py and the tuning notes in README.md.
+optimizer:
+  search_dims: 8
+  step_size_explore: 0.5
+  step_size_refine_min: 0.03
+  step_momentum: 0.6
+  noise_threshold: 0.05     # reward diffs smaller than this are EEG jitter
+  reward_window_steps: 4    # ~1s of FAA readings averaged per accept/reject
+  bounds: 1.0
+  algorithm: "hill_climb"   # "hill_climb" | "es_1p1" | "gp_bo"
+
+# CALIBRATE -> EXPLORE -> REFINE -> SETTLE, with RECOVER as an escape hatch.
+state_machine:
+  calibrate_duration_s: 30.0
+  settle_reward_threshold: 0.55
+  settle_motion_threshold: 0.1
+  settle_patience_steps: 3
+  recover_negative_streak: 4
+  recover_widen_factor: 1.5
+  max_steps: 100             # convergence expected in 10-30 steps for a
+                             # cooperative real signal; noisy/adversarial
+                             # cases can take longer - see README.md
+  refine_entry_reward: 0.05  # level-gated, not slope-gated (see state_machine.py)
+  refine_exit_margin: 0.1
+
+generator:
+  backend: "procedural"     # "procedural" (CPU fallback) | "diffusion" (SDXL-Turbo)
+  diffusion_model_id: "stabilityai/sdxl-turbo"
+  diffusion_steps: 2
+  target_fps: 30
+  frame_size: 512
+  anchor_prompts:
+    - "a glowing crystalline sculpture"
+    - "a soft organic coral form"
+    - "a sharp angular metallic structure"
+    - "a warm wooden abstract shape"
 
 loop:
-  target_latency_ms: 250   # perceive -> acquire -> decode -> generate, end to end
-  decode_window_ms: 1000   # sliding window used for SSVEP/P300 decoding
-  generate_steps: 4        # diffusion steps per candidate refresh (fast/low-step regime)
-
-calibration:
-  ssvep_trials_per_frequency: 10
-  ssvep_trial_duration_s: 5
-  p300_trials_per_target: 20
-  p300_isi_ms: 300          # inter-stimulus interval for oddball paradigm
-
-preference_vector:
-  ssvep_weight: 0.6
-  p300_weight: 0.4
+  target_latency_ms: 250          # perceive -> acquire -> decode -> generate, end to end
+  optimizer_step_interval_s: 1.0   # matches faa.update_interval_s * reward_window_steps

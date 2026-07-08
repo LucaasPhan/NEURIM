@@ -1,0 +1,9 @@
+# Heavy GPU deps for generator.backend = "diffusion" / image-to-3D.
+# pip install -r requirements.txt -r requirements-diffusion.txt
+-r requirements.txt
+torch>=2.2.0
+diffusers>=0.27.0
+transformers>=4.38.0
+accelerate>=0.27.0
+# TripoSR (image-to-3D): install from https://github.com/VAST-AI-Research/TripoSR
+# tsr @ git+https://github.com/VAST-AI-Research/TripoSR

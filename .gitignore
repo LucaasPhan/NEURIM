@@ -1,6 +1,10 @@
 # Data (gitignored per Agent Instructions)
 data/raw/
 data/calibration/
+data/processed/
+
+# pytest
+.pytest_cache/
 
 # Python
 __pycache__/
