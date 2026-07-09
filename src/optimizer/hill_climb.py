@@ -16,8 +16,8 @@ class MomentumHillClimb:
         self,
         dims: int,
         bounds: float = 1.0,
-        step_size: float = 0.35,
-        momentum: float = 0.6,
+        step_size: float = 0.1,
+        momentum: float = 0.5,
         noise_threshold: float = 0.08,
         rng: np.random.Generator | None = None,
     ):
@@ -68,7 +68,7 @@ class MomentumHillClimb:
             return True
 
         # Reward dropped clearly: reverse course.
-        self.velocity = -self.velocity
+        self.velocity = -self.velocity * 0.75
         return False
 
     def set_step_size(self, step_size: float) -> None:

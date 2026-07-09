@@ -49,10 +49,18 @@ def main() -> None:
         clip=config.faa.clip,
     )
 
-    print(f"[calibration] rest for {config.faa.baseline_duration_s:.0f}s ...")
-    stream = eeg_source.stream(config.eeg.channels) if isinstance(eeg_source, EmotivCortexSource) else eeg_source.stream()
-    baseline = calibrate_baseline(computer, stream, duration_s=config.faa.baseline_duration_s)
-    eeg_source.close()
+    try:
+        print(f"[calibration] rest for {config.faa.baseline_duration_s:.0f}s ...")
+        stream = (
+            eeg_source.stream(config.eeg.channels)
+            if isinstance(eeg_source, EmotivCortexSource)
+            else eeg_source.stream()
+        )
+        baseline = calibrate_baseline(computer, stream, duration_s=config.faa.baseline_duration_s)
+    finally:
+        # Always release the Cortex session, even on Ctrl+C or a mid-run
+        # error - an unclosed session blocks the next connection attempt.
+        eeg_source.close()
 
     CALIBRATION_DIR.mkdir(parents=True, exist_ok=True)
     out_path = CALIBRATION_DIR / f"{args.subject}_{int(time.time())}.json"

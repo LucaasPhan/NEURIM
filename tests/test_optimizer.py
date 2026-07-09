@@ -84,7 +84,10 @@ def test_hill_climb_reverses_on_clear_drop():
     original_velocity = optimizer.velocity.copy()
     candidate = optimizer.propose()
     optimizer.update(candidate, reward_before=0.5, reward_after=0.0)
-    assert np.allclose(optimizer.velocity, -original_velocity)
+    # Reversal is damped (currently x0.75), not a pure negation - check
+    # direction flipped and magnitude shrank, rather than pinning the factor.
+    assert np.dot(optimizer.velocity, original_velocity) < 0
+    assert np.linalg.norm(optimizer.velocity) < np.linalg.norm(original_velocity)
 
 
 def test_one_plus_one_es_adapts_sigma_on_success_streak():

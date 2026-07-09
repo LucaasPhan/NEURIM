@@ -37,11 +37,11 @@ def _encode_jpeg(image: Image.Image, quality: int = 85) -> str:
 
 
 class Interpolator:
-    """Linear interpolation between the last two accepted latents, sampled
+    """ -- Morphing Process (animation)
+    Linear interpolation between the last two accepted latents, sampled
     continuously so the morph renders at target_fps between optimizer steps
     that only arrive every 1-2s.
     """
-
     def __init__(self):
         self.z_start = None
         self.z_end = None

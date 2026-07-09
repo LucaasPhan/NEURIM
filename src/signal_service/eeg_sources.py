@@ -68,12 +68,19 @@ class MockEEGSource:
 class EmotivCortexSource:
     """EMOTIV Cortex API client for the EPOC X headset (WebSocket JSON-RPC).
 
-    Flow: requestAccess -> authorize -> createSession -> subscribe("eeg").
-    No official PyPI SDK exists; this talks to the Cortex websocket directly
-    via `websocket-client`. Requires EMOTIV_CLIENT_ID / EMOTIV_CLIENT_SECRET.
+    Flow: requestAccess (poll until a human clicks Accept in EMOTIV Launcher)
+    -> authorize -> queryHeadsets -> controlDevice (connect if needed) ->
+    createSession(headset) -> subscribe("eeg"). No official PyPI SDK exists;
+    this talks to the Cortex websocket directly via `websocket-client`.
+    Requires EMOTIV_CLIENT_ID / EMOTIV_CLIENT_SECRET, EMOTIV Launcher running
+    locally (it hosts the Cortex service this connects to), and the headset
+    already paired to it.
     """
 
     CORTEX_URL = "wss://localhost:6868"
+    ACCESS_POLL_INTERVAL_S = 2.0
+    ACCESS_POLL_TIMEOUT_S = 60.0
+    DEVICE_CONNECT_TIMEOUT_S = 20.0
 
     def __init__(self, client_id: str | None = None, client_secret: str | None = None):
         self.client_id = client_id
@@ -96,24 +103,78 @@ class EmotivCortexSource:
         response = json.loads(self._ws.recv())
         if "error" in response:
             raise RuntimeError(f"Cortex API error on {method}: {response['error']}")
+        print(response)
         return response["result"]
 
+    def _wait_for_access(self) -> None:
+        deadline = time.monotonic() + self.ACCESS_POLL_TIMEOUT_S
+        printed_prompt = False
+        while True:
+            result = self._call(
+                "requestAccess", {"clientId": self.client_id, "clientSecret": self.client_secret}
+            )
+            if result.get("accessGranted"):
+                return
+            if not printed_prompt:
+                print(
+                    "[emotiv] waiting for approval - open EMOTIV Launcher and click "
+                    "'Accept' on the access request popup"
+                )
+                printed_prompt = True
+            if time.monotonic() > deadline:
+                raise RuntimeError(
+                    f"Cortex access not granted after {self.ACCESS_POLL_TIMEOUT_S:.0f}s - "
+                    "check EMOTIV Launcher for a pending approval request"
+                )
+            time.sleep(self.ACCESS_POLL_INTERVAL_S)
+
+    def _connect_headset(self) -> str:
+        deadline = time.monotonic() + self.DEVICE_CONNECT_TIMEOUT_S
+        while True:
+            headsets = self._call("queryHeadsets", {})
+            if not headsets:
+                if time.monotonic() > deadline:
+                    raise RuntimeError(
+                        "No headset found via Cortex - check it's powered on and paired "
+                        "in EMOTIV Launcher"
+                    )
+                time.sleep(1.0)
+                continue
+
+            headset = headsets[0]
+            headset_id = headset["id"]
+            if headset.get("status") == "connected":
+                return headset_id
+
+            self._call("controlDevice", {"command": "connect", "headset": headset_id})
+            if time.monotonic() > deadline:
+                raise RuntimeError(
+                    f"Headset '{headset_id}' did not reach 'connected' status in time - "
+                    "check EMOTIV Launcher's device status"
+                )
+            time.sleep(1.0)
+
     def connect(self) -> None:
+        import ssl
+
         import websocket
 
         if not self.client_id or not self.client_secret:
             raise RuntimeError(
                 "EMOTIV_CLIENT_ID / EMOTIV_CLIENT_SECRET are required to connect to Cortex"
             )
-        self._ws = websocket.create_connection(self.CORTEX_URL)
-        self._call("requestAccess", {"clientId": self.client_id, "clientSecret": self.client_secret})
+        # Cortex serves a self-signed cert on localhost; there's no real MITM
+        # risk to guard against on a loopback connection to your own machine.
+        self._ws = websocket.create_connection(self.CORTEX_URL, sslopt={"cert_reqs": ssl.CERT_NONE})
+        self._wait_for_access()
         auth = self._call(
             "authorize", {"clientId": self.client_id, "clientSecret": self.client_secret}
         )
         self._cortex_token = auth["cortexToken"]
+        headset_id = self._connect_headset()
         session = self._call(
             "createSession",
-            {"cortexToken": self._cortex_token, "status": "active"},
+            {"cortexToken": self._cortex_token, "headset": headset_id, "status": "active"},
         )
         self._session_id = session["id"]
         self._call(
@@ -137,9 +198,23 @@ class EmotivCortexSource:
             yield t, sample
 
     def close(self) -> None:
+        # Unpublished Cortex apps are limited to one active session at a
+        # time - if this isn't told to close cleanly, Cortex keeps it "active"
+        # server-side and the *next* connect attempt gets rejected (confusingly,
+        # with the same "unpublished application" error as an owner mismatch).
+        if self._ws is not None and self._cortex_token and self._session_id:
+            try:
+                self._call(
+                    "updateSession",
+                    {"cortexToken": self._cortex_token, "session": self._session_id, "status": "close"},
+                )
+            except Exception:
+                pass  # best-effort - the socket may already be half-dead
         if self._ws is not None:
             self._ws.close()
             self._ws = None
+        self._cortex_token = None
+        self._session_id = None
 
 
 class BrainFlowLSLSource:

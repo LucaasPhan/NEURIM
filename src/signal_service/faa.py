@@ -5,6 +5,8 @@ resting baseline and clipped to [-1, 1]. Higher = more left-frontal activation
 = approach motivation, per the standard EEG asymmetry literature. This module
 only knows about numbers in, numbers out - it never sees the diffusion model,
 the optimizer, or anything about images.
+
+F3 = Channel_3.csv and F4 = Channel_12.csv.
 """
 
 from __future__ import annotations

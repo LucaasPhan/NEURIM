@@ -9,8 +9,11 @@ Two modes:
                      convergence (see tests/test_optimizer.py for the
                      assertions; this script is for eyeballing it directly).
   --mode keyboard    Interactive. Up/down arrows nudge reward like a
-                     human's "warmer/colder" gut feeling; watch
-                     data/processed/live_frame.png update as the shape morphs.
+                     human's "warmer/colder" gut feeling.
+
+To *watch* it morph in real time (either mode, any --algorithm), open
+frontend/live_view.html in a browser before or while running this script -
+it polls data/processed/live_frame.png, which this script keeps overwriting.
 
 If the loop doesn't converge to something a person points at and says "yes"
 here, no EEG signal will save it - this is the whole point of shipping the
@@ -55,15 +58,23 @@ def run_scripted(config: Config, seed: int) -> None:
     orchestrator = LocalOrchestrator(config, signal_service, generator, optimizer=optimizer)
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
+    target_image = generator.render_image(target)
+    target_image.save(OUT_DIR / "target_frame.png")
+    print(f"[fake-loop] target rendered to {OUT_DIR / 'target_frame.png'}")
     frame_count = 0
 
     def on_frame(frame_msg):
         nonlocal frame_count
         frame_count += 1
-        if frame_count % 15 == 0:  # ~ every half second at 30fps
+        if frame_count % 3 == 0:  # ~10fps to disk - smooth enough, cheap enough
             _save_frame(frame_msg)
 
+    def on_step(latent_msg):
+        print(f"[fake-loop] step {latent_msg.step_index:3d}  state={latent_msg.state:9s}  "
+              f"reward={latent_msg.reward_estimate:+.3f}")
+
     orchestrator.on_frame = on_frame
+    orchestrator.on_step = on_step
 
     wall_budget = config.state_machine.max_steps * config.loop.optimizer_step_interval_s * 1.5
 
@@ -96,7 +107,7 @@ def run_keyboard(config: Config) -> None:
     from src.signal_service.fake_reward import KeyboardRewardSource
 
     print("[fake-loop] up/down arrows nudge reward. Ctrl+C to stop.")
-    print(f"[fake-loop] watching {OUT_DIR / 'live_frame.png'} - open it in an image viewer that auto-refreshes.")
+    print("[fake-loop] open frontend/live_view.html in a browser to watch it morph.")
 
     generator = GeneratorService(config)
     reward_source = KeyboardRewardSource()
@@ -104,7 +115,13 @@ def run_keyboard(config: Config) -> None:
     orchestrator = LocalOrchestrator(config, signal_service, generator)
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    def on_step(latent_msg):
+        print(f"[fake-loop] step {latent_msg.step_index:3d}  state={latent_msg.state:9s}  "
+              f"reward={latent_msg.reward_estimate:+.3f}")
+
     orchestrator.on_frame = _save_frame
+    orchestrator.on_step = on_step
 
     async def main():
         await orchestrator.calibrate()

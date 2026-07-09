@@ -22,9 +22,9 @@ class OnePlusOneES:
         self,
         dims: int,
         bounds: float = 1.0,
-        sigma: float = 0.3,
+        sigma: float = 0.01,
         noise_threshold: float = 0.08,
-        window: int = 10,
+        window: int = 5,
         rng: np.random.Generator | None = None,
     ):
         self.dims = dims

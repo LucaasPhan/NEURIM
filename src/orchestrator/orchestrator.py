@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING, Callable
 import numpy as np
 
 from src.common.config import Config
-from src.common.messages import FrameMessage, RewardMessage
+from src.common.messages import FrameMessage, LatentMessage, RewardMessage
 from src.generator.service import GeneratorService, Interpolator
 from src.optimizer.service import OptimizerService
 from src.signal_service.service import SignalService
@@ -39,6 +39,7 @@ class LocalOrchestrator:
         generator: GeneratorService,
         optimizer: OptimizerService | None = None,
         on_frame: Callable[[FrameMessage], None] | None = None,
+        on_step: Callable[[LatentMessage], None] | None = None,
     ):
         self.config = config
         self.signal_service = signal_service
@@ -47,6 +48,7 @@ class LocalOrchestrator:
         self.interpolator = Interpolator()
         self.interpolator.set_target(self.optimizer.pending_candidate())
         self.on_frame = on_frame or (lambda msg: None)
+        self.on_step = on_step or (lambda msg: None)
         self._stop_event: asyncio.Event | None = None
         self._step_started_at = time.monotonic()
         self._last_step_index = 0
@@ -79,6 +81,7 @@ class LocalOrchestrator:
                 self._last_state = result.state
                 self._last_reward_estimate = result.reward_estimate
                 self._step_started_at = time.monotonic()
+                self.on_step(result)
                 if self.optimizer.state_machine.should_stop():
                     assert self._stop_event is not None
                     self._stop_event.set()

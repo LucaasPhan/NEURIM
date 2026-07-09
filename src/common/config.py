@@ -120,4 +120,7 @@ def _tuple_fields(raw: dict) -> dict:
 
 
 def emotiv_credentials() -> tuple[str | None, str | None]:
+    from dotenv import load_dotenv
+
+    load_dotenv()
     return os.environ.get("EMOTIV_CLIENT_ID"), os.environ.get("EMOTIV_CLIENT_SECRET")
