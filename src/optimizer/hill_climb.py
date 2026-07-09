@@ -73,6 +73,7 @@ class MomentumHillClimb:
 
     def set_step_size(self, step_size: float) -> None:
         self.step_size = step_size
+        
         norm = np.linalg.norm(self.velocity)
         self.velocity = self.velocity / norm * step_size if norm > 1e-9 else self.velocity
 

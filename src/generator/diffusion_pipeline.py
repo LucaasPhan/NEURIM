@@ -14,18 +14,49 @@ class DiffusionGenerator:
         self,
         model_id: str = "stabilityai/sdxl-turbo",
         num_inference_steps: int = 2,
-        device: str = "cuda",
+        device: str | None = None,
     ):
         import torch
         from diffusers import AutoPipelineForText2Image
 
-        self.device = device
+        self.device = device or self._detect_device(torch)
         self.num_inference_steps = num_inference_steps
         self._torch = torch
-        self.pipe = AutoPipelineForText2Image.from_pretrained(
-            model_id, torch_dtype=torch.float16, variant="fp16"
-        ).to(device)
+
+        if self.device == "cuda":
+            # fp16 + the "fp16" weight variant is the fast path CUDA supports.
+            self.dtype = torch.float16
+            load_kwargs = {"torch_dtype": self.dtype, "variant": "fp16"}
+        else:
+            # fp16 has a known black-image bug on MPS (Apple Silicon), and
+            # CPU has no native fp16 compute either - fp32 on both, slower
+            # but actually produces correct images.
+            self.dtype = torch.float32
+            load_kwargs = {"torch_dtype": self.dtype}
+
+        self.pipe = AutoPipelineForText2Image.from_pretrained(model_id, **load_kwargs).to(self.device)
         self._prev_image = None
+
+    @staticmethod
+    def _detect_device(torch) -> str:
+        if torch.cuda.is_available():
+            return "cuda"
+        if torch.backends.mps.is_available():
+            return "mps"
+        return "cpu"
+
+    def render_from_prompt(self, prompt: str):
+        """Straight text -> image, bypassing the embedding/projector path -
+        for sanity-checking the model/hardware before wiring up the
+        anchor-prompt projector that the live optimizer loop uses.
+        """
+        image = self.pipe(
+            prompt,
+            num_inference_steps=self.num_inference_steps,
+            guidance_scale=0.0,
+        ).images[0]
+        self._prev_image = image
+        return image
 
     def encode_prompts(self, prompts: list[str]) -> np.ndarray:
         """Run each anchor prompt through the pipeline's text encoder(s) and
@@ -46,7 +77,7 @@ class DiffusionGenerator:
         shape (reshape happens against the pipe's own text-encoder output
         shape, captured the first time encode_prompts() runs).
         """
-        prompt_embeds = self._torch.tensor(embedding, dtype=self._torch.float16, device=self.device)
+        prompt_embeds = self._torch.tensor(embedding, dtype=self.dtype, device=self.device)
         prompt_embeds = prompt_embeds.reshape(1, -1, prompt_embeds.shape[-1])
         image = self.pipe(
             prompt_embeds=prompt_embeds,
@@ -66,7 +97,7 @@ class DiffusionGenerator:
 
         if not hasattr(self, "_img2img_pipe"):
             self._img2img_pipe = AutoPipelineForImage2Image.from_pipe(self.pipe)
-        prompt_embeds = self._torch.tensor(embedding, dtype=self._torch.float16, device=self.device)
+        prompt_embeds = self._torch.tensor(embedding, dtype=self.dtype, device=self.device)
         prompt_embeds = prompt_embeds.reshape(1, -1, prompt_embeds.shape[-1])
         image = self._img2img_pipe(
             image=self._prev_image,
