@@ -40,7 +40,12 @@ class FAARewardSource(RewardSource):
         r = self.computer.reward()
         if r is None:
             return None
-        return RewardMessage(r=r, raw_faa=raw, source="eeg")
+        return RewardMessage(
+            r=r,
+            raw_faa=raw,
+            source="eeg",
+            eeg_features=self.computer.eeg_features(reward=r, raw=raw),
+        )
 
 
 class SignalService:
@@ -92,6 +97,7 @@ def build_faa_service(config: Config, eeg_source: EEGSource) -> SignalService:
         band=config.faa.band_hz,
         window_s=config.faa.window_s,
         clip=config.faa.clip,
+        channels=config.eeg.channels,
     )
     source = FAARewardSource(eeg_source, computer)
     return SignalService(source, update_interval_s=config.faa.update_interval_s)

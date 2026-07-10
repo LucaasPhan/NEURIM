@@ -73,7 +73,7 @@ class RemoteDiffusionClient:
         # First call: fetch one keyframe synchronously so we never show a blank
         # frame, then start the background fetcher for everything after.
         if self._curr_keyframe is None:
-            image = self._fetch(z)
+            image = self._fetch(z, step_index=step_index, state=state, reward_estimate=reward_estimate, prompt=prompt)
             with self._lock:
                 self._prev_keyframe = image
                 self._curr_keyframe = image
@@ -131,12 +131,24 @@ class RemoteDiffusionClient:
 
     # -- transport ----------------------------------------------------------
 
-    def _fetch(self, z: np.ndarray) -> Image.Image:
+    def _fetch(
+        self,
+        z: np.ndarray,
+        step_index: int = 0,
+        state: str = "explore",
+        reward_estimate: float = 0.0,
+        prompt: str | None = None,
+    ) -> Image.Image:
         payload = {
             "z": list(map(float, z)),
             "seed": int(self.seed),
             "frame_size": int(self.frame_size),
+            "step_index": int(step_index),
+            "state": state,
+            "reward_estimate": float(reward_estimate),
         }
+        if prompt is not None:
+            payload["prompt"] = prompt
         return self._post_render(payload)
 
     def _post_render(self, payload: dict) -> Image.Image:

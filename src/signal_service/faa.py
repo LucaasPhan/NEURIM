@@ -18,6 +18,24 @@ import numpy as np
 from scipy.signal import welch
 
 
+EPOC_X_POSITIONS: dict[str, tuple[float, float, float]] = {
+    "AF3": (-0.42, 0.88, 0.22),
+    "F7": (-0.86, 0.58, 0.04),
+    "F3": (-0.46, 0.55, 0.36),
+    "FC5": (-0.72, 0.22, 0.22),
+    "T7": (-0.95, -0.08, 0.0),
+    "P7": (-0.78, -0.58, 0.1),
+    "O1": (-0.34, -0.9, 0.18),
+    "O2": (0.34, -0.9, 0.18),
+    "P8": (0.78, -0.58, 0.1),
+    "T8": (0.95, -0.08, 0.0),
+    "FC6": (0.72, 0.22, 0.22),
+    "F4": (0.46, 0.55, 0.36),
+    "F8": (0.86, 0.58, 0.04),
+    "AF4": (0.42, 0.88, 0.22),
+}
+
+
 def band_power(samples: np.ndarray, fs: float, band: tuple[float, float]) -> float:
     """Welch PSD power in `band` (Hz) for a single-channel 1D signal."""
     if samples.size < 8:
@@ -81,6 +99,7 @@ class FAARewardComputer:
         band: tuple[float, float] = (8.0, 13.0),
         window_s: float = 2.0,
         clip: tuple[float, float] = (-1.0, 1.0),
+        channels: list[str] | None = None,
     ):
         self.fs = fs
         self.channel_left = channel_left
@@ -89,16 +108,18 @@ class FAARewardComputer:
         self.window_s = window_s
         self.clip = clip
         self._maxlen = int(fs * window_s) + 1
+        channel_names = list(dict.fromkeys([*(channels or []), channel_left, channel_right]))
         self._buffers: dict[str, deque[float]] = {
-            channel_left: deque(maxlen=self._maxlen),
-            channel_right: deque(maxlen=self._maxlen),
+            ch: deque(maxlen=self._maxlen) for ch in channel_names
         }
         self.baseline = RunningBaseline()
 
     def push_sample(self, channel_values: dict[str, float]) -> None:
-        for ch in (self.channel_left, self.channel_right):
-            if ch in channel_values:
-                self._buffers[ch].append(channel_values[ch])
+        for ch, value in channel_values.items():
+            if ch not in self._buffers:
+                self._buffers[ch] = deque(maxlen=self._maxlen)
+            if isinstance(value, int | float):
+                self._buffers[ch].append(float(value))
 
     def ready(self) -> bool:
         return len(self._buffers[self.channel_left]) >= self._maxlen - 1
@@ -118,6 +139,41 @@ class FAARewardComputer:
         p_left = band_power(np.asarray(self._buffers[self.channel_left]), self.fs, self.band)
         p_right = band_power(np.asarray(self._buffers[self.channel_right]), self.fs, self.band)
         return p_left, p_right
+
+    def eeg_features(self, reward: float | None = None, raw: float | None = None) -> dict | None:
+        """Compact EEG visualization payload for the frontend.
+
+        Uses alpha-band power over the same sliding window as FAA. This is
+        intentionally low-rate derived telemetry, not raw high-frequency EEG.
+        """
+        if not self.ready():
+            return None
+
+        channels = []
+        for name, buf in self._buffers.items():
+            if not buf:
+                continue
+            arr = np.asarray(buf, dtype=float)
+            alpha = band_power(arr, self.fs, self.band) if arr.size >= 8 else 0.0
+            channels.append(
+                {
+                    "name": name,
+                    "value": float(arr[-1]),
+                    "alpha_power": float(alpha),
+                    "quality": min(1.0, len(buf) / max(1, self._maxlen - 1)),
+                    "position": list(EPOC_X_POSITIONS.get(name, (0.0, 0.0, 0.0))),
+                }
+            )
+
+        return {
+            "channels": channels,
+            "faa": {
+                "raw": raw if raw is not None else self.raw_value(),
+                "reward": reward if reward is not None else self.reward(),
+                "left_channel": self.channel_left,
+                "right_channel": self.channel_right,
+            },
+        }
 
     def reward(self) -> float | None:
         """Baseline-normalized r(t), or None if the buffer isn't full yet."""
