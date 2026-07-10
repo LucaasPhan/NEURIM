@@ -23,6 +23,7 @@ class RewardMessage:
     t: float = field(default_factory=time.time)
     raw_faa: float | None = None
     source: str = "eeg"  # "eeg" | "fake"
+    eeg_features: dict[str, Any] | None = None
 
     def to_json(self) -> str:
         return json.dumps(asdict(self))
@@ -66,6 +67,7 @@ class FrameMessage:
     format: str = "jpeg"
     state: str = "explore"
     reward_estimate: float = 0.0
+    eeg_features: dict[str, Any] | None = None
 
     def to_json(self) -> str:
         return json.dumps(asdict(self))

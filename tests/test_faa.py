@@ -59,3 +59,26 @@ def test_faa_reward_computer_ready_and_clipped():
     r = computer.reward()
     assert r is not None
     assert -1.0 <= r <= 1.0
+
+
+def test_faa_eeg_features_include_all_configured_channels():
+    fs = 128.0
+    channels = ["AF3", "F3", "F4", "O1"]
+    computer = FAARewardComputer(fs=fs, window_s=1.0, channels=channels)
+    computer.baseline.fit([0.0])
+
+    n_samples = int(fs * 1.0) + 5
+    for i in range(n_samples):
+        computer.push_sample({ch: np.sin(i / 3.0) for ch in channels})
+
+    reward = computer.reward()
+    raw = computer.raw_value()
+    features = computer.eeg_features(reward=reward, raw=raw)
+
+    assert features is not None
+    assert features["faa"]["left_channel"] == "F3"
+    assert features["faa"]["right_channel"] == "F4"
+    assert {item["name"] for item in features["channels"]} == set(channels)
+    for item in features["channels"]:
+        assert len(item["position"]) == 3
+        assert "alpha_power" in item

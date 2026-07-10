@@ -54,6 +54,7 @@ class LocalOrchestrator:
         self._last_step_index = 0
         self._last_state: str = "calibrate"
         self._last_reward_estimate: float = 0.0
+        self._last_eeg_features: dict | None = None
 
     async def calibrate(self) -> None:
         """Real FAA needs 30s of rest to fit the baseline; fake reward sources
@@ -74,6 +75,7 @@ class LocalOrchestrator:
 
     async def _reward_loop(self) -> None:
         async for msg in self.signal_service.stream():
+            self._last_eeg_features = msg.eeg_features
             result = self.optimizer.observe_reward(msg.r)
             if result is not None:
                 self.interpolator.set_target(np.array(result.z, dtype=float))
@@ -100,6 +102,7 @@ class LocalOrchestrator:
                 self._last_step_index,
                 state=self._last_state,
                 reward_estimate=self._last_reward_estimate,
+                eeg_features=self._last_eeg_features,
             )
             self.on_frame(frame)
             await asyncio.sleep(frame_interval)
@@ -139,10 +142,12 @@ class WebSocketOrchestrator:
         self._last_step_index = 0
         self._last_state: str = "calibrate"
         self._last_reward_estimate: float = 0.0
+        self._last_eeg_features: dict | None = None
 
     async def _handle_signal_client(self, websocket) -> None:
         async for raw in websocket:
             msg = RewardMessage.from_json(raw)
+            self._last_eeg_features = msg.eeg_features
             result = self.optimizer.observe_reward(msg.r)
             if result is not None:
                 self.interpolator.set_target(np.array(result.z, dtype=float))
@@ -168,7 +173,7 @@ class WebSocketOrchestrator:
 
     async def _broadcast(self, payload: str) -> None:
         stale = []
-        for ws in self._display_clients:
+        for ws in list(self._display_clients):
             try:
                 await ws.send(payload)
             except Exception:
@@ -188,6 +193,7 @@ class WebSocketOrchestrator:
                 self._last_step_index,
                 state=self._last_state,
                 reward_estimate=self._last_reward_estimate,
+                eeg_features=self._last_eeg_features,
             )
             await self._broadcast(frame.to_json())
             await asyncio.sleep(frame_interval)

@@ -121,6 +121,7 @@ class GeneratorService:
         as_pyramid: bool = False,
         state: str = "explore",
         reward_estimate: float = 0.0,
+        eeg_features: dict | None = None,
     ) -> FrameMessage:
         if self.backend == "remote_diffusion":
             # Send the continuous z itself: the server projects it to a full
@@ -145,4 +146,5 @@ class GeneratorService:
             format=frame_format,
             state=state,
             reward_estimate=reward_estimate,
+            eeg_features=eeg_features,
         )
