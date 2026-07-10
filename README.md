@@ -210,6 +210,7 @@ NEURIM/
 │   ├── run_calibration.py        # per-subject FAA baseline
 │   ├── run_diffusion_server.py    # remote diffusion HTTP server (SDXL-Turbo)
 │   ├── run_streamdiffusion_server.py  # remote diffusion HTTP server (SD-Turbo, StreamDiffusion, real-time)
+│   ├── run_streamdiffusion_demo.py    # full loop in ONE process on the GPU box (no HTTP split)
 │   ├── test_streamdiffusion.py    # diagnostic: t_index_list tuning, see Milestone section above
 │   └── run_demo.py               # the real thing
 ├── data/
