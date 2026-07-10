@@ -62,11 +62,13 @@ class OptimizerConfig:
 @dataclass
 class StateMachineConfig:
     calibrate_duration_s: float = 30.0
-    settle_reward_threshold: float = 0.55
+    settle_reward_threshold: float = 0.30        # realistic plateau level for a clipped FAA z-score
+    settle_reward_std_threshold: float = 0.15    # plateau tightness: recent reward std must be below this
     settle_motion_threshold: float = 0.1
     settle_patience_steps: int = 3
     min_steps_before_settle: int = 0
     recover_negative_streak: int = 4
+    recover_reward_margin: float = -0.25         # RECOVER only counts rewards clearly below 0, not any dip
     recover_widen_factor: float = 1.5
     max_steps: int = 100
     # EXPLORE -> REFINE once the recent average reward climbs above this

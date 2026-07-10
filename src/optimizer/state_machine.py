@@ -40,6 +40,12 @@ class StateMachine:
         recent = list(self.reward_history)[-n:]
         return float(np.mean(recent))
 
+    def _recent_std(self, n: int = 5) -> float:
+        if len(self.reward_history) < 2:
+            return float("inf")  # not enough data to call it a plateau
+        recent = list(self.reward_history)[-n:]
+        return float(np.std(recent))
+
     def observe(self, reward: float, step_norm: float) -> State:
         """Call once per optimizer step with the accepted/estimated reward and
         the norm of the last accepted step. Returns the (possibly new) state.
@@ -50,7 +56,10 @@ class StateMachine:
         if self.state == "calibrate":
             return self.state
 
-        if reward < 0:
+        # FAA reward is a baseline z-score centered near 0, so a plain reward<0
+        # test fires RECOVER on ordinary noise. Only count a clearly-bad reward
+        # (below a negative margin) toward the streak.
+        if reward < self.sm_config.recover_reward_margin:
             self.negative_streak += 1
         else:
             self.negative_streak = 0
@@ -66,7 +75,17 @@ class StateMachine:
             self.state = "explore"
             return self.state
 
-        if reward >= self.sm_config.settle_reward_threshold and step_norm < self.sm_config.settle_motion_threshold:
+        # SETTLE on a plateau (recent average high enough AND low variance),
+        # not on an instantaneous high reading - a clipped z-score rarely holds
+        # a high instantaneous value for several steps, so the old check never
+        # locked and just drifted.
+        recent_avg = self._recent_average()
+        plateau = self._recent_std() < self.sm_config.settle_reward_std_threshold
+        if (
+            recent_avg >= self.sm_config.settle_reward_threshold
+            and plateau
+            and step_norm < self.sm_config.settle_motion_threshold
+        ):
             self.settle_streak += 1
         else:
             self.settle_streak = 0

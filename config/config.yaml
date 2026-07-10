@@ -65,11 +65,13 @@ optimizer:
 # CALIBRATE -> EXPLORE -> REFINE -> SETTLE, with RECOVER as an escape hatch.
 state_machine:
   calibrate_duration_s: 30.0
-  settle_reward_threshold: 0.55
+  settle_reward_threshold: 0.30       # was 0.55 - realistic plateau for a clipped FAA z-score
+  settle_reward_std_threshold: 0.15   # plateau tightness: SETTLE needs recent reward std below this
   settle_motion_threshold: 0.1
   settle_patience_steps: 3
   min_steps_before_settle: 20
   recover_negative_streak: 4
+  recover_reward_margin: -0.25        # RECOVER counts only clearly-bad rewards, not ordinary z-score dips
   recover_widen_factor: 1.5
   max_steps: 100             # convergence expected in 10-30 steps for a
                              # cooperative real signal; noisy/adversarial
