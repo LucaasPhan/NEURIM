@@ -21,6 +21,7 @@ from src.common.config import Config
 from src.common.messages import FrameMessage
 from src.generator.procedural import ProceduralRenderer
 from src.generator.to_3d import mirrored_quadrants
+from src.optimizer.projection import PCAProjector
 
 
 def _encode_png(image: Image.Image) -> str:
@@ -103,6 +104,19 @@ class GeneratorService:
         if weights.size == 0:
             return prompts[0]
         return prompts[int(np.argmax(weights))]
+
+    def set_anchor_prompts(self, prompts: list[str]) -> None:
+        cleaned = [prompt.strip() for prompt in prompts if prompt.strip()]
+        if not cleaned:
+            raise ValueError("anchor_prompts must contain at least one non-empty prompt")
+        self.anchor_prompts = cleaned
+        self.config.generator.anchor_prompts = cleaned
+
+        if self.backend == "diffusion":
+            embeddings = self._diffusion.encode_prompts(cleaned)
+            self.projector = PCAProjector(dims=self.config.optimizer.search_dims).fit(embeddings)
+        elif self.backend == "openai" and hasattr(self, "_openai"):
+            self._openai._cache.clear()
 
     def render_image(self, z: np.ndarray) -> Image.Image:
         if self.backend == "diffusion":

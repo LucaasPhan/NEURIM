@@ -60,11 +60,13 @@ from src.optimizer.projection import PCAProjector
 
 
 class StreamDiffusionRenderServer:
-    def __init__(self, wrapper, projector: PCAProjector, prompt_embed_shape: tuple[int, int], frame_size: int):
+    def __init__(self, wrapper, projector: PCAProjector, prompt_embed_shape: tuple[int, int], frame_size: int, dims: int):
         self.wrapper = wrapper
         self.projector = projector
         self.seq_len, self.hidden = prompt_embed_shape
         self.frame_size = frame_size
+        self.dims = dims
+        self.anchor_prompts: list[str] = []
         self.lock = threading.Lock()
         # StreamDiffusion's img2img mode conditions on the previous frame - this
         # IS the "stream" (the state that makes consecutive frames coherent).
@@ -118,24 +120,36 @@ class StreamDiffusionRenderServer:
         image.save(buf, format="PNG")
         return buf.getvalue()
 
+    def set_anchor_prompts(self, prompts: list[str]) -> None:
+        cleaned = [prompt.strip() for prompt in prompts if prompt.strip()]
+        if len(cleaned) < 2:
+            raise ValueError("stream diffusion requires at least two anchor prompts")
+        with self.lock:
+            self.projector, shape = _fit_projector(self.wrapper, cleaned, self.dims)
+            self.seq_len, self.hidden = shape
+            self.anchor_prompts = cleaned
+            self._prev_image = self._bootstrap_frame()
+
 
 def make_handler(render_server: StreamDiffusionRenderServer):
     class Handler(BaseHTTPRequestHandler):
         def do_POST(self) -> None:
-            if self.path != "/render":
-                self.send_error(404, "expected POST /render")
+            if self.path not in {"/render", "/anchors"}:
+                self.send_error(404, "expected POST /render or POST /anchors")
                 return
             try:
                 length = int(self.headers.get("content-length", "0"))
                 payload = json.loads(self.rfile.read(length) or b"{}")
+                if self.path == "/anchors":
+                    prompts = payload.get("anchor_prompts", [])
+                    if not isinstance(prompts, list):
+                        raise ValueError("anchor_prompts must be a list")
+                    render_server.set_anchor_prompts([str(prompt) for prompt in prompts])
+                    self._send_json({"ok": True, "count": len(prompts)})
+                    return
                 png = render_server.render_png(payload)
             except Exception as exc:  # noqa: BLE001 - report server-side failures to the client.
-                body = json.dumps({"error": str(exc)}).encode("utf-8")
-                self.send_response(500)
-                self.send_header("content-type", "application/json")
-                self.send_header("content-length", str(len(body)))
-                self.end_headers()
-                self.wfile.write(body)
+                self._send_json({"ok": False, "error": str(exc)}, status=500)
                 return
 
             self.send_response(200)
@@ -143,6 +157,14 @@ def make_handler(render_server: StreamDiffusionRenderServer):
             self.send_header("content-length", str(len(png)))
             self.end_headers()
             self.wfile.write(png)
+
+        def _send_json(self, payload: dict, status: int = 200) -> None:
+            body = json.dumps(payload).encode("utf-8")
+            self.send_response(status)
+            self.send_header("content-type", "application/json")
+            self.send_header("content-length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
 
         def log_message(self, fmt: str, *args) -> None:
             print(f"[streamdiffusion-server] {self.address_string()} - {fmt % args}")
@@ -237,7 +259,8 @@ def main() -> None:
     wrapper = build_wrapper(config, args.streamdiffusion_repo, args.model_id, t_index_list,
                             args.acceleration, seed, frame_size)
     projector, embed_shape = _fit_projector(wrapper, config.generator.anchor_prompts, config.optimizer.search_dims)
-    render_server = StreamDiffusionRenderServer(wrapper, projector, embed_shape, frame_size)
+    render_server = StreamDiffusionRenderServer(wrapper, projector, embed_shape, frame_size, config.optimizer.search_dims)
+    render_server.anchor_prompts = list(config.generator.anchor_prompts)
 
     server = ThreadingHTTPServer((args.host, args.port), make_handler(render_server))
     print(f"[streamdiffusion-server] listening on http://{args.host}:{args.port} (seed={seed})")
