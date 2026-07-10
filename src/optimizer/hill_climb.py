@@ -58,6 +58,7 @@ class MomentumHillClimb:
             self.velocity = self._random_direction() * self.step_size
             return False
 
+        # If reward increase, continue moving with some random in direction
         if diff > 0:
             self.z = candidate
             new_dir = self.momentum * self.velocity + (1 - self.momentum) * (
@@ -68,12 +69,12 @@ class MomentumHillClimb:
             return True
 
         # Reward dropped clearly: reverse course.
-        self.velocity = -self.velocity * 0.75
+        self.velocity = -self.velocity
         return False
 
     def set_step_size(self, step_size: float) -> None:
         self.step_size = step_size
-        
+
         norm = np.linalg.norm(self.velocity)
         self.velocity = self.velocity / norm * step_size if norm > 1e-9 else self.velocity
 
