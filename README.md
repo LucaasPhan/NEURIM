@@ -78,6 +78,8 @@ falls back to if real-time text-to-3D blows the latency budget.
 `src/generator/openai_image.py` wraps the OpenAI Image API. Set
 `OPENAI_API_KEY` in the environment or `.env`, then use
 `scripts/run_demo.py --backend openai`.
+`src/generator/diffusion_pipeline.py` wraps SDXL-Turbo/LCM via `diffusers`
+(lazy-imported; needs a CUDA GPU - see `requirements-diffusion.txt`).
 `src/generator/to_3d.py` wraps TripoSR for image-to-3D, with a
 `ProceduralPseudo3D` fallback (rotate the 2D sprite to fake a viewing angle),
 and composes four mirrored quadrants for a tabletop hologram pyramid.
@@ -93,7 +95,8 @@ and composes four mirrored quadrants for a tabletop hologram pyramid.
 2. **Real FAA.** `scripts/run_calibration.py` fits the per-subject baseline;
    `scripts/run_demo.py` (no `--mock`) swaps in `EmotivCortexSource` or
    `BrainFlowLSLSource`.
-3. **Generation quality.** `scripts/run_demo.py --backend openai`.
+3. **Generation quality.** `scripts/run_demo.py --backend openai` or
+   `scripts/run_demo.py --backend diffusion`.
 4. **The pyramid and 3D.** `src/generator/to_3d.py`.
 5. **Polish.**
 
@@ -136,11 +139,12 @@ defaults to 8 (the favorable end of the spec's 8-16 range) for this reason.
 NEURIM/
 ├── config/config.yaml          # FAA, optimizer, state machine, generator config
 ├── requirements.txt             # base deps (no GPU needed)
+├── requirements-diffusion.txt   # + torch/diffusers/TripoSR for local diffusion
 ├── src/
 │   ├── common/                  # config loading, websocket message schemas
 │   ├── signal_service/          # FAA reward, EEG sources, fake reward sources
 │   ├── optimizer/                # projection, hill-climb/ES/GP-BO, state machine
-│   ├── generator/                # procedural fallback, OpenAI image API, image-to-3D
+│   ├── generator/                # procedural fallback, diffusion, OpenAI image API, image-to-3D
 │   └── orchestrator/             # wires the above, local or over websockets
 ├── scripts/
 │   ├── run_fake_loop.py          # build-order step 1 (see above)
@@ -158,6 +162,7 @@ NEURIM/
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt          # base - no GPU needed
 OPENAI_API_KEY=... python scripts/run_demo.py --backend openai
+# pip install -r requirements-diffusion.txt   # only for --backend diffusion
 
 pytest tests/                             # unit tests + convergence proof
 python scripts/run_fake_loop.py --mode scripted   # end-to-end, no hardware

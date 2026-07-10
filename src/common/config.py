@@ -69,7 +69,9 @@ class StateMachineConfig:
 
 @dataclass
 class GeneratorConfig:
-    backend: str = "procedural"  # "procedural" | "openai"
+    backend: str = "procedural"  # "procedural" | "diffusion" | "openai"
+    diffusion_model_id: str = "stabilityai/sdxl-turbo"
+    diffusion_steps: int = 2
     openai_image_model: str = "gpt-image-2"
     openai_image_size: str = "1024x1024"
     openai_image_quality: str = "low"

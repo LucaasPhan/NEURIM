@@ -1,7 +1,8 @@
 """The Generator service: z in, rendered pyramid frame out.
 
 Backend is picked by config.generator.backend ("procedural" for the
-GPU-free fallback / fake-reward loop, "openai" for the OpenAI Image API). The
+GPU-free fallback / fake-reward loop, "diffusion" for SDXL-Turbo, "openai"
+for the OpenAI Image API). The
 Optimizer only emits one z every 1-2s, so the Orchestrator interpolates
 between accepted latents and calls render() at 30-60fps for a smooth morph -
 see Interpolator below.
@@ -65,7 +66,14 @@ class GeneratorService:
         self.backend = config.generator.backend
         self.projector = projector
         self.anchor_prompts = config.generator.anchor_prompts
-        if self.backend == "openai":
+        if self.backend == "diffusion":
+            from src.generator.diffusion_pipeline import DiffusionGenerator
+
+            self._diffusion = DiffusionGenerator(
+                config.generator.diffusion_model_id,
+                num_inference_steps=config.generator.diffusion_steps,
+            )
+        elif self.backend == "openai":
             from src.generator.openai_image import OpenAIImageGenerator
 
             self._openai = OpenAIImageGenerator(
@@ -86,6 +94,11 @@ class GeneratorService:
         return prompts[int(np.argmax(weights))]
 
     def render_image(self, z: np.ndarray) -> Image.Image:
+        if self.backend == "diffusion":
+            if self.projector is not None:
+                embedding = self.projector.to_embedding(z)
+                return self._diffusion.render(embedding)
+            return self._diffusion.render_prompt(self._anchor_prompt_for(z))
         if self.backend == "openai":
             return self._openai.render_prompt(self._anchor_prompt_for(z))
         return self._procedural.render(z, size=self.config.generator.frame_size)
