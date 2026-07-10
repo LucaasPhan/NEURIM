@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING, Callable
 import numpy as np
 
 from src.common.config import Config
-from src.common.messages import FrameMessage, LatentMessage, RewardMessage
+from src.common.messages import ControlMessage, FrameMessage, LatentMessage, RewardMessage
 from src.generator.service import GeneratorService, Interpolator
 from src.optimizer.service import OptimizerService
 from src.signal_service.service import SignalService
@@ -163,11 +163,28 @@ class WebSocketOrchestrator:
         finally:
             self._display_clients.discard(websocket)
 
+    async def _handle_control_client(self, websocket) -> None:
+        async for raw in websocket:
+            try:
+                msg = ControlMessage.from_json(raw)
+                if msg.command == "set_anchor_prompts":
+                    prompts = msg.args.get("anchor_prompts", [])
+                    if not isinstance(prompts, list):
+                        raise ValueError("anchor_prompts must be a list")
+                    self.generator.set_anchor_prompts([str(prompt) for prompt in prompts])
+                    await websocket.send(json.dumps({"ok": True, "command": msg.command, "count": len(prompts)}))
+                else:
+                    raise ValueError(f"unsupported control command: {msg.command}")
+            except Exception as exc:  # noqa: BLE001 - return structured errors to control clients.
+                await websocket.send(json.dumps({"ok": False, "error": str(exc)}))
+
     async def _router(self, websocket) -> None:
         hello_raw = await websocket.recv()
         role = json.loads(hello_raw).get("role")
         if role == "signal":
             await self._handle_signal_client(websocket)
+        elif role == "control":
+            await self._handle_control_client(websocket)
         else:
             await self._handle_display_client(websocket)
 

@@ -37,10 +37,12 @@ from src.optimizer.projection import PCAProjector
 
 
 class DiffusionRenderServer:
-    def __init__(self, generator: DiffusionGenerator, projector: PCAProjector | None, seed: int):
+    def __init__(self, generator: DiffusionGenerator, projector: PCAProjector | None, seed: int, dims: int):
         self.generator = generator
         self.projector = projector
         self.seed = seed
+        self.dims = dims
+        self.anchor_prompts: list[str] = []
         self.lock = threading.Lock()
 
     def render_png(self, payload: dict) -> bytes:
@@ -65,25 +67,35 @@ class DiffusionRenderServer:
         image.save(buf, format="PNG")
         return buf.getvalue()
 
+    def set_anchor_prompts(self, prompts: list[str]) -> None:
+        cleaned = [prompt.strip() for prompt in prompts if prompt.strip()]
+        if len(cleaned) < 2:
+            raise ValueError("remote diffusion requires at least two anchor prompts")
+        with self.lock:
+            self.projector = _fit_projector(self.generator, cleaned, self.dims)
+            self.anchor_prompts = cleaned
+
 
 def make_handler(render_server: DiffusionRenderServer):
     class Handler(BaseHTTPRequestHandler):
         def do_POST(self) -> None:
-            if self.path != "/render":
-                self.send_error(404, "expected POST /render")
+            if self.path not in {"/render", "/anchors"}:
+                self.send_error(404, "expected POST /render or POST /anchors")
                 return
 
             try:
                 length = int(self.headers.get("content-length", "0"))
                 payload = json.loads(self.rfile.read(length) or b"{}")
+                if self.path == "/anchors":
+                    prompts = payload.get("anchor_prompts", [])
+                    if not isinstance(prompts, list):
+                        raise ValueError("anchor_prompts must be a list")
+                    render_server.set_anchor_prompts([str(prompt) for prompt in prompts])
+                    self._send_json({"ok": True, "count": len(prompts)})
+                    return
                 png = render_server.render_png(payload)
             except Exception as exc:  # noqa: BLE001 - report server-side failures to the client.
-                body = json.dumps({"error": str(exc)}).encode("utf-8")
-                self.send_response(500)
-                self.send_header("content-type", "application/json")
-                self.send_header("content-length", str(len(body)))
-                self.end_headers()
-                self.wfile.write(body)
+                self._send_json({"ok": False, "error": str(exc)}, status=500)
                 return
 
             self.send_response(200)
@@ -91,6 +103,14 @@ def make_handler(render_server: DiffusionRenderServer):
             self.send_header("content-length", str(len(png)))
             self.end_headers()
             self.wfile.write(png)
+
+        def _send_json(self, payload: dict, status: int = 200) -> None:
+            body = json.dumps(payload).encode("utf-8")
+            self.send_response(status)
+            self.send_header("content-type", "application/json")
+            self.send_header("content-length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
 
         def log_message(self, fmt: str, *args) -> None:
             print(f"[diffusion-server] {self.address_string()} - {fmt % args}")
@@ -136,7 +156,9 @@ def main() -> None:
     )
     projector = _fit_projector(generator, config.generator.anchor_prompts, config.optimizer.search_dims)
 
-    handler = make_handler(DiffusionRenderServer(generator, projector, seed))
+    render_server = DiffusionRenderServer(generator, projector, seed, config.optimizer.search_dims)
+    render_server.anchor_prompts = list(config.generator.anchor_prompts)
+    handler = make_handler(render_server)
     server = ThreadingHTTPServer((args.host, args.port), handler)
     print(f"[diffusion-server] listening on http://{args.host}:{args.port} (seed={seed}, steps={steps})")
     server.serve_forever()

@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Activity, Brain, CircleStop, Gauge, Radio, Sparkles, Unplug, Wifi } from "lucide-react";
+import { Activity, Brain, CheckCircle2, CircleStop, Gauge, Radio, Save, Sparkles, Unplug, Wand2, Wifi } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -149,6 +149,7 @@ function ZMeters({ z }: { z: number[] }) {
 
 export function NeurimDashboard() {
   const [url, setUrl] = useState("ws://localhost:8765");
+  const [remoteUrl, setRemoteUrl] = useState("http://localhost:8766");
   const [connected, setConnected] = useState(false);
   const [status, setStatus] = useState("Not connected");
   const [frame, setFrame] = useState<FrameMessage | null>(null);
@@ -158,6 +159,12 @@ export function NeurimDashboard() {
   const [rewardLog, setRewardLog] = useState<number[]>([]);
   const [latencyMs, setLatencyMs] = useState<number | null>(null);
   const [fps, setFps] = useState(0);
+  const [desiredPrompt, setDesiredPrompt] = useState("");
+  const [anchorPrompts, setAnchorPrompts] = useState<string[]>([]);
+  const [controlledAxes, setControlledAxes] = useState<string[]>([]);
+  const [promptStatus, setPromptStatus] = useState("Enter a desired prompt to generate anchors.");
+  const [isGeneratingAnchors, setIsGeneratingAnchors] = useState(false);
+  const [isApplyingAnchors, setIsApplyingAnchors] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const frameCounter = useRef({ count: 0, startedAt: 0 });
 
@@ -242,6 +249,66 @@ export function NeurimDashboard() {
     wsRef.current = null;
     setConnected(false);
     setStatus("Disconnected");
+  }
+
+  async function generateAnchors() {
+    const prompt = desiredPrompt.trim();
+    if (!prompt) {
+      setPromptStatus("Enter a desired inferred prompt first.");
+      return;
+    }
+    setIsGeneratingAnchors(true);
+    setPromptStatus("Generating anchor prompts with OpenAI...");
+    try {
+      const response = await fetch("/api/anchor-prompts/generate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ desired_prompt: prompt }),
+      });
+      const json = await response.json();
+      if (!response.ok) throw new Error(json.error || "Failed to generate anchor prompts");
+      setAnchorPrompts(json.anchor_prompts);
+      setControlledAxes(json.controlled_axes ?? []);
+      setPromptStatus(`Generated 10 anchors with ${json.model}. Review and apply when ready.`);
+    } catch (error) {
+      setPromptStatus(error instanceof Error ? error.message : String(error));
+    } finally {
+      setIsGeneratingAnchors(false);
+    }
+  }
+
+  async function applyAnchors() {
+    const prompts = anchorPrompts.map((prompt) => prompt.trim()).filter(Boolean);
+    if (prompts.length !== 10) {
+      setPromptStatus("Exactly 10 non-empty anchor prompts are required.");
+      return;
+    }
+    setIsApplyingAnchors(true);
+    setPromptStatus("Applying anchors to hub and remote diffusion server...");
+    try {
+      const response = await fetch("/api/anchor-prompts/apply", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          anchor_prompts: prompts,
+          remote_diffusion_url: remoteUrl.trim(),
+          hub_ws_url: url.trim(),
+        }),
+      });
+      const json = await response.json();
+      const remote = json.targets?.remote;
+      const hub = json.targets?.hub;
+      const parts = [
+        remote ? `remote ${remote.ok ? "ok" : `failed: ${remote.error}`}` : null,
+        hub ? `hub ${hub.ok ? "ok" : `failed: ${hub.error}`}` : null,
+      ].filter(Boolean);
+      if (!response.ok && response.status !== 207) throw new Error(json.error || "Failed to apply anchors");
+      setPromptStatus(parts.length ? `Apply complete: ${parts.join(" · ")}` : "Apply complete.");
+    } catch (error) {
+      setPromptStatus(error instanceof Error ? error.message : String(error));
+    } finally {
+      setIsApplyingAnchors(false);
+    }
   }
 
   const reward = frame?.eeg_features?.faa.reward ?? frame?.reward_estimate ?? 0;
@@ -383,6 +450,86 @@ export function NeurimDashboard() {
         </section>
 
         <section className="grid gap-5 lg:grid-cols-[0.8fr_1.2fr]">
+          <Card className="lg:col-span-2">
+            <CardHeader className="flex-row items-start justify-between space-y-0">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Wand2 className="h-4 w-4 text-primary" />
+                  Anchor prompt generation
+                </CardTitle>
+                <CardDescription>Generate ten coherent anchor prompts from the desired inferred prompt, then hot-apply them.</CardDescription>
+              </div>
+              <Badge variant={anchorPrompts.length === 10 ? "default" : "outline"}>{anchorPrompts.length}/10 anchors</Badge>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-3 lg:grid-cols-[1fr_280px]">
+                <textarea
+                  value={desiredPrompt}
+                  onChange={(event) => setDesiredPrompt(event.target.value)}
+                  placeholder="Example: a calm photorealistic golden retriever puppy on white bedding"
+                  className="min-h-24 w-full resize-y rounded-md border bg-input px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                />
+                <div className="space-y-2">
+                  <Input
+                    value={remoteUrl}
+                    onChange={(event) => setRemoteUrl(event.target.value)}
+                    className="font-mono"
+                    placeholder="http://localhost:8766"
+                  />
+                  <Button className="w-full" onClick={generateAnchors} disabled={isGeneratingAnchors}>
+                    <Sparkles className="h-4 w-4" />
+                    {isGeneratingAnchors ? "Generating..." : "Generate anchors"}
+                  </Button>
+                  <Button
+                    className="w-full"
+                    variant="secondary"
+                    onClick={applyAnchors}
+                    disabled={isApplyingAnchors || anchorPrompts.length !== 10}
+                  >
+                    {isApplyingAnchors ? <Save className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
+                    {isApplyingAnchors ? "Applying..." : "Apply to system"}
+                  </Button>
+                </div>
+              </div>
+
+              {controlledAxes.length ? (
+                <div className="rounded-md border bg-muted/25 p-3">
+                  <div className="mb-2 font-mono text-xs uppercase tracking-wide text-muted-foreground">Controlled axes</div>
+                  <div className="flex flex-wrap gap-2">
+                    {controlledAxes.map((axis, index) => (
+                      <Badge key={`${axis}-${index}`} variant="outline">
+                        {axis}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {anchorPrompts.length ? (
+                <div className="grid gap-3 lg:grid-cols-5">
+                  {anchorPrompts.map((prompt, index) => (
+                    <div key={index} className="rounded-md border bg-muted/25 p-3">
+                      <div className="mb-2 font-mono text-xs text-muted-foreground">Anchor {index + 1}</div>
+                      <textarea
+                        value={prompt}
+                        onChange={(event) => {
+                          const next = [...anchorPrompts];
+                          next[index] = event.target.value;
+                          setAnchorPrompts(next);
+                        }}
+                        className="min-h-36 w-full resize-y rounded-md border bg-background px-3 py-2 text-xs leading-5 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+
+              <div className="rounded-md border bg-muted/30 px-3 py-2 font-mono text-xs text-muted-foreground">
+                {promptStatus}
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
