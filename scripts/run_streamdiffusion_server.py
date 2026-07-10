@@ -68,8 +68,27 @@ class StreamDiffusionRenderServer:
         self.lock = threading.Lock()
         # StreamDiffusion's img2img mode conditions on the previous frame - this
         # IS the "stream" (the state that makes consecutive frames coherent).
-        # Seed it with a flat grey frame before the first real z arrives.
-        self._prev_image = Image.new("RGB", (frame_size, frame_size), (128, 128, 128))
+        # It can only lightly restyle its input, though, so it CANNOT bootstrap a
+        # coherent image from flat grey - the stream must start from a real,
+        # prompt-conditioned frame or every output stays grey mush. Generate that
+        # starting frame once via the SD-Turbo txt2img path (fresh per-frame noise
+        # is irrelevant for a one-shot), conditioned on z=0 (the mean anchor embed).
+        self._prev_image = self._bootstrap_frame()
+
+    def _bootstrap_frame(self) -> Image.Image:
+        try:
+            self._inject_embedding(np.zeros(self.projector.dims))
+            image = self.wrapper.txt2img()
+            if isinstance(image, list):
+                image = image[0]
+            if image.size != (self.frame_size, self.frame_size):
+                image = image.resize((self.frame_size, self.frame_size))
+            print("[streamdiffusion-server] bootstrapped starting frame via txt2img")
+            return image
+        except Exception as exc:  # noqa: BLE001
+            print(f"[streamdiffusion-server] WARNING: txt2img bootstrap failed ({exc}); "
+                  "falling back to grey - the morph likely won't form a coherent image")
+            return Image.new("RGB", (self.frame_size, self.frame_size), (128, 128, 128))
 
     def _inject_embedding(self, z: np.ndarray) -> None:
         import torch  # lazy: keep torch out of this module's import path for non-GPU callers
@@ -131,6 +150,46 @@ def make_handler(render_server: StreamDiffusionRenderServer):
     return Handler
 
 
+def build_wrapper(config, streamdiffusion_repo, model_id, t_index_list, acceleration, seed, frame_size):
+    """Construct + prepare a StreamDiffusionWrapper. Shared by the server and
+    scripts/test_streamdiffusion.py so the diagnostic exercises the exact setup.
+    """
+    repo_path = str(Path(streamdiffusion_repo).resolve())
+    if not (Path(repo_path) / "utils" / "wrapper.py").exists():
+        sys.exit(f"[streamdiffusion-server] {repo_path}/utils/wrapper.py not found - "
+                  "is --streamdiffusion-repo a real StreamDiffusion checkout?")
+    sys.path.insert(0, repo_path)
+
+    import torch
+    from utils.wrapper import StreamDiffusionWrapper  # only importable with repo_path on sys.path
+
+    print(f"[streamdiffusion-server] loading {model_id} (t_index_list={t_index_list}, "
+          f"acceleration={acceleration})...")
+    wrapper = StreamDiffusionWrapper(
+        model_id_or_path=model_id,
+        t_index_list=t_index_list,
+        mode="img2img",
+        output_type="pil",
+        device="cuda",
+        dtype=torch.float16,
+        frame_buffer_size=1,
+        width=frame_size,
+        height=frame_size,
+        acceleration=acceleration,
+        use_lcm_lora=False,   # this is a true SD-Turbo run, not LCM-LoRA-on-SD1.5
+        use_tiny_vae=True,
+        use_denoising_batch=True,
+        cfg_type="none",      # avoids uncond-embeds concatenation, since we inject
+                               # prompt_embeds directly rather than via update_prompt()
+        seed=seed,
+    )
+    # Any placeholder prompt works here - prepare() just initializes internal state
+    # (batch_size, schedules); real conditioning comes from overwriting prompt_embeds.
+    wrapper.prepare(prompt=config.generator.anchor_prompts[0] if config.generator.anchor_prompts else "a photo",
+                     guidance_scale=1.0)
+    return wrapper
+
+
 def _fit_projector(wrapper, anchor_prompts: list[str], dims: int) -> tuple[PCAProjector, tuple[int, int]]:
     if len(anchor_prompts) < 2:
         print(f"[streamdiffusion-server] WARNING: only {len(anchor_prompts)} anchor prompt(s) - "
@@ -175,41 +234,8 @@ def main() -> None:
     t_index_list = [int(x) for x in args.t_index_list.split(",")]
     frame_size = config.generator.frame_size
 
-    repo_path = str(Path(args.streamdiffusion_repo).resolve())
-    if not (Path(repo_path) / "utils" / "wrapper.py").exists():
-        sys.exit(f"[streamdiffusion-server] {repo_path}/utils/wrapper.py not found - "
-                  "is --streamdiffusion-repo a real StreamDiffusion checkout?")
-    sys.path.insert(0, repo_path)
-
-    import torch
-    from utils.wrapper import StreamDiffusionWrapper  # only importable with repo_path on sys.path - see above
-
-    print(f"[streamdiffusion-server] loading {args.model_id} (t_index_list={t_index_list}, "
-          f"acceleration={args.acceleration})...")
-    wrapper = StreamDiffusionWrapper(
-        model_id_or_path=args.model_id,
-        t_index_list=t_index_list,
-        mode="img2img",
-        output_type="pil",
-        device="cuda",
-        dtype=torch.float16,
-        frame_buffer_size=1,
-        width=frame_size,
-        height=frame_size,
-        acceleration=args.acceleration,
-        use_lcm_lora=False,   # this is a true SD-Turbo run, not LCM-LoRA-on-SD1.5
-        use_tiny_vae=True,
-        use_denoising_batch=True,
-        cfg_type="none",      # avoids uncond-embeds concatenation, since we inject
-                               # prompt_embeds directly rather than via update_prompt()
-        seed=seed,
-    )
-    # Any placeholder prompt works here - prepare() just initializes internal
-    # state (batch_size, schedules); the real per-frame conditioning comes from
-    # _inject_embedding() overwriting stream.prompt_embeds afterward.
-    wrapper.prepare(prompt=config.generator.anchor_prompts[0] if config.generator.anchor_prompts else "a photo",
-                     guidance_scale=1.0)
-
+    wrapper = build_wrapper(config, args.streamdiffusion_repo, args.model_id, t_index_list,
+                            args.acceleration, seed, frame_size)
     projector, embed_shape = _fit_projector(wrapper, config.generator.anchor_prompts, config.optimizer.search_dims)
     render_server = StreamDiffusionRenderServer(wrapper, projector, embed_shape, frame_size)
 
