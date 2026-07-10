@@ -99,6 +99,11 @@ class EmotivCortexSource:
         self._session_id: str | None = None
         self._eeg_cols: list[str] = []
         self._req_id = 0
+        # Column labels for the eeg data array, captured from the subscribe
+        # response - Cortex sends [COUNTER, INTERPOLATED, <channels>, RAW_CQ,
+        # MARKER_HARDWARE, MARKERS], so channels must be mapped by label, not
+        # by naive position.
+        self._eeg_cols: list[str] | None = None
 
     def _next_id(self) -> int:
         self._req_id += 1
@@ -211,7 +216,7 @@ class EmotivCortexSource:
         )
         self._wait_for_access()
         auth = self._call(
-            "authorize", {"clientId": self.client_id, "clientSecret": self.client_secret}
+            "authorize", {"clientId": self.client_id, "clientSecret": self.client_secret, "debit": 10}
         )
         self._cortex_token = auth["cortexToken"]
         headset_id = self._select_headset()
@@ -220,36 +225,27 @@ class EmotivCortexSource:
             {"cortexToken": self._cortex_token, "headset": headset_id, "status": "active"},
         )
         self._session_id = session["id"]
-        subscription = self._call(
+        self._call(
             "subscribe",
             {"cortexToken": self._cortex_token, "session": self._session_id, "streams": ["eeg"]},
         )
-        for item in subscription.get("success", []):
-            if item.get("streamName") == "eeg":
-                self._eeg_cols = item.get("cols", [])
-                break
 
-    def stream(self, channels: list[str] | None = None) -> Iterator[tuple[float, dict[str, float]]]:
+    def stream(self, channels: list[str]) -> Iterator[tuple[float, dict[str, float]]]:
         import json
 
         assert self._ws is not None, "call connect() first"
+        # Prefer the real column labels captured at subscribe; fall back to the
+        # caller-supplied montage only if Cortex didn't report cols.
+        cols = self._eeg_cols or channels
         while True:
             msg = json.loads(self._ws.recv())
             if "eeg" not in msg:
                 continue
             values = msg["eeg"]
-            t = msg["time"]
-            if self._eeg_cols:
-                sample = {
-                    col: value
-                    for col, value in zip(self._eeg_cols, values)
-                    if isinstance(value, int | float)
-                }
-            else:
-                # Fallback for tests or older callers: Cortex's EEG array is
-                # COUNTER, INTERPOLATED, then sensor values.
-                assert channels is not None, "Cortex subscribe did not return EEG columns"
-                sample = dict(zip(channels, values[2:]))
+            # Cortex sends [time, ch0, ch1, ...]; caller's channel order must
+            # match the subscribed montage from config.yaml.
+            t = values[0]
+            sample = dict(zip(channels, values[1:]))
             yield t, sample
 
     def close(self) -> None:
@@ -270,6 +266,7 @@ class EmotivCortexSource:
             self._ws = None
         self._cortex_token = None
         self._session_id = None
+        self._eeg_cols = None
 
 
 class BrainFlowLSLSource:

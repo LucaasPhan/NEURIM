@@ -109,6 +109,16 @@ class FAARewardComputer:
         window = {ch: np.asarray(buf) for ch, buf in self._buffers.items()}
         return raw_faa(window, self.fs, self.channel_left, self.channel_right, self.band)
 
+    def band_powers(self) -> tuple[float, float] | None:
+        """(power_left, power_right) in the configured band over the current
+        window, or None if the buffer isn't full yet. Diagnostic helper - the
+        FAA index is ln(power_right) - ln(power_left)."""
+        if not self.ready():
+            return None
+        p_left = band_power(np.asarray(self._buffers[self.channel_left]), self.fs, self.band)
+        p_right = band_power(np.asarray(self._buffers[self.channel_right]), self.fs, self.band)
+        return p_left, p_right
+
     def reward(self) -> float | None:
         """Baseline-normalized r(t), or None if the buffer isn't full yet."""
         value = self.raw_value()
