@@ -54,7 +54,7 @@ state_machine:
   settle_reward_threshold: 0.55
   settle_motion_threshold: 0.1
   settle_patience_steps: 3
-  min_steps_before_settle: 12
+  min_steps_before_settle: 1000
   recover_negative_streak: 4
   recover_widen_factor: 1.5
   max_steps: 100             # convergence expected in 10-30 steps for a

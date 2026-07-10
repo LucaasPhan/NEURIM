@@ -25,22 +25,61 @@ from src.signal_service.service import build_faa_service
 OUT_DIR = Path(__file__).resolve().parents[1] / "data" / "processed"
 
 
-def _save_frame(frame_msg) -> None:
+def _save_frame(frame_msg, name: str = "live_frame.png") -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    with open(OUT_DIR / "live_frame.png", "wb") as f:
+    with open(OUT_DIR / name, "wb") as f:
         f.write(base64.b64decode(frame_msg.frame_b64))
+
+
+class _SessionSnapshot:
+    """Saves the session's first and final frame to data/processed/, for the
+    OFFLINE DiffMorpher showcase (scripts/run_diffmorpher_showcase.py) - a
+    polished start->end morph video generated after the live loop finishes.
+    This is deliberately separate from the real-time crossfade/keyframe loop:
+    DiffMorpher's per-pair LoRA fine-tune + 50-step SD2.1 sampling is far too
+    slow to run inside the ~1s-per-step online loop, so it only ever runs once,
+    after the session settles, against these two saved stills.
+    """
+
+    def __init__(self):
+        self._start_saved = False
+
+    def on_frame(self, frame_msg) -> None:
+        _save_frame(frame_msg)
+        if not self._start_saved:
+            _save_frame(frame_msg, "session_start.png")
+            self._start_saved = True
+
+    def save_end(self, frame_msg) -> None:
+        _save_frame(frame_msg, "session_end.png")
 
 
 async def run_local(config: Config, eeg_source) -> None:
     signal_service = build_faa_service(config, eeg_source)
     generator = GeneratorService(config)
-    orchestrator = LocalOrchestrator(config, signal_service, generator, on_frame=_save_frame)
+    snapshot = _SessionSnapshot()
+    orchestrator = LocalOrchestrator(config, signal_service, generator, on_frame=snapshot.on_frame)
     print("[demo] calibrating baseline...")
     await orchestrator.calibrate()
     print("[demo] running - writing frames to", OUT_DIR / "live_frame.png")
     await orchestrator.run()
-    print(f"[demo] state={orchestrator.optimizer.state_machine.state} "
-          f"steps={orchestrator.optimizer.state_machine.step_index}")
+    final_state = orchestrator.optimizer.state_machine.state
+    final_step = orchestrator.optimizer.state_machine.step_index
+    print(f"[demo] state={final_state} steps={final_step}")
+
+    # One clean render of the last *accepted* latent (not a mid-interpolation
+    # blend) as the session's closing still.
+    final_frame = generator.render(
+        orchestrator.optimizer.current_z(),
+        final_step,
+        state=final_state,
+        reward_estimate=orchestrator._last_reward_estimate,
+    )
+    snapshot.save_end(final_frame)
+    print(f"[demo] saved {OUT_DIR / 'session_start.png'} and {OUT_DIR / 'session_end.png'}")
+    if final_state == "settle":
+        print("[demo] session settled - run scripts/run_diffmorpher_showcase.py "
+              "(in DiffMorpher's own venv) for a polished closing morph")
 
 
 async def run_served(config: Config, host: str, port: int) -> None:
