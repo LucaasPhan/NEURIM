@@ -88,12 +88,14 @@ class DiffusionGenerator:
 
             seq_len, hidden = prompt_embeds.shape[-2], prompt_embeds.shape[-1]
             self._prompt_embed_shape = (int(seq_len), int(hidden))
-            flat = prompt_embeds.flatten().cpu().numpy()
+            # Cast to float32 leaving the GPU: the pipe runs fp16 on CUDA, but
+            # np.linalg.svd (in PCAProjector.fit) rejects float16.
+            flat = prompt_embeds.flatten().float().cpu().numpy()
             if pooled is not None:
                 self._pooled_dim = int(pooled.shape[-1])
-                flat = np.concatenate([flat, pooled.flatten().cpu().numpy()])
+                flat = np.concatenate([flat, pooled.flatten().float().cpu().numpy()])
             embeddings.append(flat)
-        return np.stack(embeddings)
+        return np.stack(embeddings).astype(np.float32)
 
     def render_from_embedding(self, embedding: np.ndarray, seed: int | None = None):
         """Reconstruct (prompt_embeds, pooled_prompt_embeds) from a flat vector
