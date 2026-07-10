@@ -22,20 +22,37 @@ if TYPE_CHECKING:
 class FAARewardSource(RewardSource):
     """Wraps an EEGSource + FAARewardComputer behind the RewardSource interface."""
 
-    def __init__(self, eeg_source: EEGSource, computer: FAARewardComputer):
+    def __init__(
+        self,
+        eeg_source: EEGSource,
+        computer: FAARewardComputer,
+        samples_per_read: int = 1,
+    ):
         self.eeg_source = eeg_source
         self.computer = computer
+        self.samples_per_read = max(1, samples_per_read)
         self._stream = None
 
-    def _pump_until_ready(self) -> None:
+    def _pump(self) -> None:
         if self._stream is None:
             self._stream = self.eeg_source.stream()
-        while not self.computer.ready():
-            _t, sample = next(self._stream)
-            self.computer.push_sample(sample)
+        if not self.computer.ready():
+            # Warm-up: fill the window before the first reading is valid.
+            while not self.computer.ready():
+                _t, sample = next(self._stream)
+                self.computer.push_sample(sample)
+        else:
+            # Steady state: slide the window by ~one update interval so
+            # raw_value() / reward() reflect fresh EEG instead of freezing on
+            # the warm-up window (KNOWN_ISSUES #1). A blocking real source
+            # paces itself in next(); the non-blocking mock advances its
+            # virtual clock by exactly this many samples per read.
+            for _ in range(self.samples_per_read):
+                _t, sample = next(self._stream)
+                self.computer.push_sample(sample)
 
     def read_reward(self) -> RewardMessage | None:
-        self._pump_until_ready()
+        self._pump()
         raw = self.computer.raw_value()
         r = self.computer.reward()
         if r is None:
@@ -101,5 +118,6 @@ def build_faa_service(config: Config, eeg_source: EEGSource) -> SignalService:
         channel_pairs=config.faa.channel_pairs,
         pair_weights=config.faa.pair_weights,
     )
-    source = FAARewardSource(eeg_source, computer)
+    samples_per_read = max(1, round(config.eeg.sample_rate_hz * config.faa.update_interval_s))
+    source = FAARewardSource(eeg_source, computer, samples_per_read=samples_per_read)
     return SignalService(source, update_interval_s=config.faa.update_interval_s)
