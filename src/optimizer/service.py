@@ -51,7 +51,12 @@ class OptimizerService:
         self.optimizer = _build_algorithm(config)
         self.state_machine = StateMachine(config.state_machine, config.optimizer)
         self._reward_buffer: list[float] = []
-        self._current_reward_estimate = 0.0
+        # -inf, not 0.0: the first window always beats it, so the search accepts
+        # its first real move and adopts that reward as the baseline. Seeding 0.0
+        # stranded the search whenever the whole neighborhood of the origin
+        # scored below 0 (e.g. a distance-based reward), because nothing could
+        # beat the optimistic 0.0 and every step was rejected.
+        self._current_reward_estimate = float("-inf")
         self._step_index = 0
         self._candidate = self.optimizer.propose()
 

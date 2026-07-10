@@ -28,6 +28,7 @@ class StateMachine:
     reward_history: deque[float] = field(default_factory=lambda: deque(maxlen=20))
     negative_streak: int = 0
     settle_streak: int = 0
+    stagnation_streak: int = 0
     blacklist: list[np.ndarray] = field(default_factory=list)
 
     def mark_calibrated(self) -> None:
@@ -72,6 +73,7 @@ class StateMachine:
             # One recovery step taken (widen + revert handled by caller); go
             # back to exploring from the restored checkpoint.
             self.negative_streak = 0
+            self.stagnation_streak = 0
             self.state = "explore"
             return self.state
 
@@ -93,6 +95,25 @@ class StateMachine:
         can_settle = self.step_index >= self.sm_config.min_steps_before_settle
         if can_settle and self.settle_streak >= self.sm_config.settle_patience_steps:
             self.state = "settle"
+            return self.state
+
+        # Stagnation escape. A low-variance plateau that is too low to SETTLE
+        # means the search has stalled at a mediocre point (e.g. a cold start
+        # where the whole neighborhood of the origin scores below baseline).
+        # Kick it like RECOVER - revert to the best point and widen - so
+        # convergence does not depend on the reward being absolutely bad. A
+        # high-variance signal (FAA baseline noise) is not a plateau, so this
+        # never fires there; only a genuine stall does.
+        stagnated = plateau and recent_avg < self.sm_config.settle_reward_threshold
+        if stagnated:
+            self.stagnation_streak += 1
+        else:
+            self.stagnation_streak = 0
+
+        if self.stagnation_streak >= self.sm_config.stagnation_patience_steps:
+            self.stagnation_streak = 0
+            self.settle_streak = 0
+            self.state = "recover"
             return self.state
 
         avg_recent = self._recent_average()

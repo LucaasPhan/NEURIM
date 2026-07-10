@@ -73,6 +73,9 @@ state_machine:
   recover_negative_streak: 4
   recover_reward_margin: -0.25        # RECOVER counts only clearly-bad rewards, not ordinary z-score dips
   recover_widen_factor: 1.5
+  stagnation_patience_steps: 6        # escape a mediocre low-variance plateau (revert+widen) so
+                                      # convergence doesn't depend on absolute-reward RECOVER
+
   max_steps: 100             # convergence expected in 10-30 steps for a
                              # cooperative real signal; noisy/adversarial
                              # cases can take longer - see README.md

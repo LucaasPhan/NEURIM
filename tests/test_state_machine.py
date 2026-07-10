@@ -62,15 +62,35 @@ def test_recover_after_negative_streak():
 
 
 def test_recover_ignores_small_negatives_above_margin():
-    # A slightly-defocused user sits just below 0 by chance. Those dips are
-    # above the margin, so they must not accumulate a RECOVER streak - the old
-    # `reward < 0` test yanked the search back and widened it constantly here.
+    # Realistic FAA baseline: a high-variance z-score swinging around 0, dipping
+    # below 0 by chance but never past the margin. The old `reward < 0` test
+    # yanked the search back and widened it constantly here; the margin must not.
+    # (High variance also means it is not a plateau, so stagnation stays quiet.)
     sm = _sm(recover_negative_streak=4, recover_reward_margin=-0.25)
     sm.mark_calibrated()
-    for _ in range(8):
-        state = sm.observe(reward=-0.1, step_norm=0.2)
+    noisy_baseline = [-0.2, 0.24, -0.15, 0.22, -0.2, 0.2, -0.1, 0.24, -0.18, 0.21]
+    for r in noisy_baseline:
+        state = sm.observe(reward=r, step_norm=0.2)
         assert state != "recover"
     assert sm.negative_streak == 0
+
+
+def test_stagnation_escapes_a_mediocre_low_variance_plateau():
+    # A flat plateau that is too low to SETTLE means the search has stalled.
+    # Stagnation kicks it back to RECOVER (revert + widen) even though no reward
+    # is below the RECOVER margin - this is what lets convergence not depend on
+    # the reward being absolutely bad.
+    sm = _sm(
+        settle_reward_threshold=0.60,
+        settle_reward_std_threshold=0.15,
+        recover_reward_margin=-0.25,
+        stagnation_patience_steps=4,
+    )
+    sm.mark_calibrated()
+    states = [sm.observe(reward=0.2, step_norm=0.2) for _ in range(8)]
+    # 0.2 is above the RECOVER margin, so the negative streak never built - the
+    # escape came purely from the plateau being stuck below the SETTLE bar.
+    assert "recover" in states
 
 
 def test_recover_returns_to_explore_next_step():

@@ -70,6 +70,11 @@ class StateMachineConfig:
     recover_negative_streak: int = 4
     recover_reward_margin: float = -0.25         # RECOVER only counts rewards clearly below 0, not any dip
     recover_widen_factor: float = 1.5
+    # Escape a low-variance plateau that is too low to SETTLE: after this many
+    # stagnant steps, kick like RECOVER (revert to best + widen). Decouples
+    # convergence from absolute-reward RECOVER; never fires on a high-variance
+    # signal (e.g. FAA baseline noise) because that is not a plateau.
+    stagnation_patience_steps: int = 6
     max_steps: int = 100
     # EXPLORE -> REFINE once the recent average reward climbs above this
     # level (not a slope check - near convergence the trend flattens out
