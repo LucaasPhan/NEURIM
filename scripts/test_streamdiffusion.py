@@ -58,8 +58,9 @@ def main() -> None:
     # --- Test A: raw generation via the official API, no injection ------------
     anchor = config.generator.anchor_prompts[0] if config.generator.anchor_prompts else "a golden retriever puppy"
     print(f"[test] A: official txt2img for prompt: {anchor!r}")
-    wrapper.update_prompt(anchor)
-    img = wrapper.txt2img()
+    # Passing prompt= makes the wrapper call stream.update_prompt() internally -
+    # the official conditioning path, independent of our z-injection.
+    img = wrapper.txt2img(prompt=anchor)
     if isinstance(img, list):
         img = img[0]
     img.save(OUT_DIR / "A_official_txt2img.png")
