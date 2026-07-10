@@ -50,7 +50,11 @@ def main() -> None:
     seed = config.generator.remote_diffusion_seed
     frame_size = config.generator.frame_size
     t_index_list = [int(x) for x in args.t_index_list.split(",")]
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    # Tag the output folder by t_index so re-runs with different values don't
+    # overwrite each other, e.g. .../streamdiffusion_test/t0_16/A_official_txt2img.png
+    out_dir = OUT_DIR / ("t" + "_".join(str(t) for t in t_index_list))
+    out_dir.mkdir(parents=True, exist_ok=True)
+    print(f"[test] writing to {out_dir}")
 
     wrapper = build_wrapper(config, args.streamdiffusion_repo, args.model_id, t_index_list,
                             args.acceleration, seed, frame_size)
@@ -63,14 +67,14 @@ def main() -> None:
     img = wrapper.txt2img(prompt=anchor)
     if isinstance(img, list):
         img = img[0]
-    img.save(OUT_DIR / "A_official_txt2img.png")
-    print(f"[test] A: saved {OUT_DIR / 'A_official_txt2img.png'} - if this isn't a coherent image, "
+    img.save(out_dir / "A_official_txt2img.png")
+    print(f"[test] A: saved {out_dir / 'A_official_txt2img.png'} - if this isn't a coherent image, "
           "the problem is model/config, not our injection")
 
     # --- Test B: our injected z -> embedding -> bootstrap + img2img morph -----
     projector, embed_shape = _fit_projector(wrapper, config.generator.anchor_prompts, config.optimizer.search_dims)
     server = StreamDiffusionRenderServer(wrapper, projector, embed_shape, frame_size)
-    server._bootstrap_frame().save(OUT_DIR / "B_bootstrap.png")
+    server._bootstrap_frame().save(out_dir / "B_bootstrap.png")
 
     dim = min(args.sweep_dim, projector.dims - 1)
     print(f"[test] B: sweeping z[{dim}] from -1 to +1 over {args.sweep_frames} frames via our render path")
@@ -78,8 +82,8 @@ def main() -> None:
         z = np.zeros(projector.dims)
         z[dim] = -1.0 + 2.0 * i / max(args.sweep_frames - 1, 1)
         png = server.render_png({"z": z.tolist()})
-        (OUT_DIR / f"B_sweep_{i:02d}.png").write_bytes(png)
-    print(f"[test] B: saved B_sweep_00..{args.sweep_frames - 1:02d}.png in {OUT_DIR} - "
+        (out_dir / f"B_sweep_{i:02d}.png").write_bytes(png)
+    print(f"[test] B: saved B_sweep_00..{args.sweep_frames - 1:02d}.png in {out_dir} - "
           "flip through them: should look like the anchor prompts and change smoothly")
 
 
