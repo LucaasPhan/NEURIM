@@ -131,6 +131,12 @@ Run these in sequence.
 | 3b | real EEG optimizer client | `scripts/run_real_eeg_optimizer.py` | **local terminal** | Sends a real FAA-driven `z` stream to the same server. Use `--mock` here if you want to verify the FAA/optimizer wiring without the headset. |
 | 4 | live image viewer | `frontend/live_view.html` | **browser on local machine** | Polls `data/processed/live_frame.png` so you can watch the latest rendered frame update in real time. |
 
+- CUDA_VISIBLE_DEVICES=4 python3 ./scripts/run_prompt_curation.py --user-prompt "Spiders" --out data/processed/prompt_test/spider.json
+- CUDA_VISIBLE_DEVICES=4 python3 ./scripts/run_general_stable_diffusion.py --session-manifest data/processed/prompt_test/spider.json
+- python .\scripts\run_mock_optimizer.py --server-url http://localhost:8766 --algorithm latent_turbo 
+- python .\scripts\run_real_eeg_optimizer.py --mock 
+- python .\scripts\run_real_eeg_optimizer.py 
+
 ### Terminal layout
 
 - **Terminal A (local):** prompt curation, then later run either
