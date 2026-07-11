@@ -234,4 +234,8 @@ python scripts/run_demo.py --backend remote_diffusion --remote-url http://GPU_HO
 
 pytest tests/                             # unit tests + convergence proof
 python scripts/run_fake_loop.py --mode scripted   # end-to-end, no hardware
+
+# Frontend + local API bridge
+python scripts/api_server.py --host 127.0.0.1 --port 8000
+cd frontend-app && NEURIM_API_URL=http://127.0.0.1:8000 npm run dev
 ```

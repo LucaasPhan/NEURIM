@@ -19,6 +19,8 @@ from pydantic import BaseModel, Field, field_validator
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 MAX_LOG_LINES = 2000
+DEFAULT_API_HOST = "127.0.0.1"
+DEFAULT_API_PORT = 8000
 
 
 class StartSessionRequest(BaseModel):
@@ -71,11 +73,20 @@ class SessionManager:
             if request.mock:
                 cmd.insert(2, "--mock")
 
+            env = os.environ.copy()
+            if request.prompt is not None:
+                env["NEURIM_SESSION_PROMPT"] = request.prompt
+
             self._logs.clear()
             self._logs.append("$ " + " ".join(cmd))
+            if request.prompt is not None:
+                prompt_log = f"[api] prompt: {request.prompt}"
+                print(prompt_log, flush=True)
+                self._logs.append(prompt_log)
             process = subprocess.Popen(
                 cmd,
                 cwd=REPO_ROOT,
+                env=env,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
@@ -159,12 +170,21 @@ class SessionManager:
 
 manager = SessionManager()
 app = FastAPI(title="NEURIM API", version="0.1.0")
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
+
+
+def _cors_origins() -> list[str]:
+    configured = os.environ.get("NEURIM_API_CORS_ORIGINS")
+    if configured:
+        return [origin.strip() for origin in configured.split(",") if origin.strip()]
+    return [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
-    ],
+    ]
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_cors_origins(),
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -193,3 +213,30 @@ def session_status() -> dict[str, Any]:
 @app.get("/session/logs")
 def session_logs(lines: int = Query(default=100, ge=1, le=1000)) -> dict[str, Any]:
     return manager.logs(lines)
+
+
+def _default_port() -> int:
+    configured = os.environ.get("NEURIM_API_PORT")
+    if configured is None:
+        return DEFAULT_API_PORT
+    try:
+        return int(configured)
+    except ValueError:
+        return DEFAULT_API_PORT
+
+
+def main() -> None:
+    import argparse
+
+    import uvicorn
+
+    parser = argparse.ArgumentParser(description="Host the local NEURIM frontend API bridge.")
+    parser.add_argument("--host", default=os.environ.get("NEURIM_API_HOST", DEFAULT_API_HOST))
+    parser.add_argument("--port", type=int, default=_default_port())
+    args = parser.parse_args()
+
+    uvicorn.run(app, host=args.host, port=args.port)
+
+
+if __name__ == "__main__":
+    main()

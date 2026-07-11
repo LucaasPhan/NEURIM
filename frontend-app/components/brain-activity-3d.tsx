@@ -5,6 +5,7 @@ import { OrbitControls, Sphere } from "@react-three/drei";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { EEGFeatures } from "@/components/neurim-dashboard";
+import { cn } from "@/lib/utils";
 
 const fallbackPositions: Record<string, [number, number, number]> = {
   AF3: [-0.42, 0.88, 0.22],
@@ -103,19 +104,28 @@ function ElectrodeNodes({ features, reward }: { features?: EEGFeatures | null; r
 export function BrainActivity3D({
   features,
   reward,
+  className,
 }: {
   features?: EEGFeatures | null;
   reward: number;
+  className?: string;
 }) {
   return (
-    <div className="h-[330px] overflow-hidden rounded-md border bg-[#091013]">
+    <div className={cn("h-[330px] overflow-hidden rounded-md border bg-[#091013]", className)}>
       <Canvas camera={{ position: [0, 0.1, 3.7], fov: 42 }} dpr={[1, 1.75]}>
         <ambientLight intensity={0.55} />
         <pointLight position={[2, 2, 3]} intensity={1.6} color="#f2a340" />
         <pointLight position={[-2.4, 0.8, 2]} intensity={1.1} color="#55b7ff" />
         <BrainMesh reward={reward} />
         <ElectrodeNodes features={features} reward={reward} />
-        <OrbitControls enablePan={false} enableZoom={false} autoRotate autoRotateSpeed={0.45} />
+        <OrbitControls
+          enablePan={false}
+          enableZoom
+          minDistance={2.1}
+          maxDistance={5.4}
+          autoRotate
+          autoRotateSpeed={0.45}
+        />
       </Canvas>
     </div>
   );

@@ -73,12 +73,14 @@ def test_start_mock_session_builds_command(monkeypatch):
 
     assert response.status_code == 200
     assert response.json()["running"] is True
+    assert response.json()["prompt"] == "cat"
     cmd = processes[0].cmd
     assert cmd[:3] == [api_server.sys.executable, "scripts/run_real_eeg_optimizer.py", "--mock"]
     assert "--baseline" in cmd
     assert "5.0" in cmd
     assert "--server-url" in cmd
     assert "http://localhost:8766" in cmd
+    assert processes[0].kwargs["env"]["NEURIM_SESSION_PROMPT"] == "cat"
 
 
 def test_start_real_session_omits_mock(monkeypatch):

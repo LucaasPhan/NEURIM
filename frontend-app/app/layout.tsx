@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "NEURIM Control",
-  description: "Live NEURIM EEG reward, generated frame, and brain activity dashboard.",
+  title: "NEURIM",
+  description: "Prompt-first EEG-guided image search with live FAA reward.",
 };
 
 export default function RootLayout({

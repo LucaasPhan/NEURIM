@@ -1,23 +1,30 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Activity, Brain, CheckCircle2, CircleStop, Gauge, Radio, Save, Sparkles, Unplug, Wand2, Wifi } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  AudioLines,
+  Brain,
+  ChevronDown,
+  CircleStop,
+  Loader2,
+  Mic,
+  Plus,
+  Radio,
+  Send,
+  SlidersHorizontal,
+  Unplug,
+  Wifi,
+} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 const BrainActivity3D = dynamic(
   () => import("@/components/brain-activity-3d").then((mod) => mod.BrainActivity3D),
-  { ssr: false, loading: () => <Skeleton className="h-[330px] rounded-md" /> }
+  { ssr: false, loading: () => <Skeleton className="h-[430px] rounded-[24px]" /> }
 );
 
 export type EEGFeatures = {
@@ -47,155 +54,150 @@ type FrameMessage = {
   eeg_features?: EEGFeatures | null;
 };
 
-const stateLabels: Record<string, string> = {
-  calibrate: "Calibrating",
-  explore: "Exploring",
-  refine: "Refining",
-  settle: "Locked",
-  recover: "Recovering",
+type BackendSession = {
+  running: boolean;
+  pid: number | null;
+  started_at: string | null;
+  prompt: string | null;
+  exit_code: number | null;
+};
+
+type SessionIntentResponse = {
+  ok: boolean;
+  session_id: string;
+  prompt: string;
+  max_steps: number;
+  prompt_routing: "local_api_server" | string;
+  render_contract: string;
+  backend_url: string;
+  backend_session: BackendSession;
+};
+
+const examplePrompts = [
+  "A calm golden retriever puppy on white bedding",
+  "A futuristic bioluminescent garden at dawn",
+  "A soft cinematic portrait with warm studio light",
+];
+
+const epocPositions: Record<string, [number, number, number]> = {
+  AF3: [-0.42, 0.88, 0.22],
+  F7: [-0.86, 0.58, 0.04],
+  F3: [-0.46, 0.55, 0.36],
+  FC5: [-0.72, 0.22, 0.22],
+  T7: [-0.95, -0.08, 0],
+  P7: [-0.78, -0.58, 0.1],
+  O1: [-0.34, -0.9, 0.18],
+  O2: [0.34, -0.9, 0.18],
+  P8: [0.78, -0.58, 0.1],
+  T8: [0.95, -0.08, 0],
+  FC6: [0.72, 0.22, 0.22],
+  F4: [0.46, 0.55, 0.36],
+  F8: [0.86, 0.58, 0.04],
+  AF4: [0.42, 0.88, 0.22],
 };
 
 function decodeFrameSrc(msg: FrameMessage) {
   return `data:image/${msg.format || "jpeg"};base64,${msg.frame_b64}`;
 }
 
-function rewardToPercent(value: number) {
-  return Math.max(0, Math.min(100, ((value + 1) / 2) * 100));
+function promptHash(input: string) {
+  let hash = 2166136261;
+  for (let i = 0; i < input.length; i += 1) {
+    hash ^= input.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
 }
 
-function formatMs(value: number | null) {
-  return value == null ? "n/a" : `${Math.round(value)} ms`;
+function seededUnit(seed: number, index: number) {
+  const value = Math.sin(seed * 0.00001 + index * 12.9898) * 43758.5453;
+  return value - Math.floor(value);
 }
 
-function Sparkline({ values }: { values: number[] }) {
-  const points = useMemo(() => {
-    if (values.length < 2) return "";
-    return values
-      .map((value, index) => {
-        const x = (index / Math.max(1, values.length - 1)) * 100;
-        const y = 36 - ((Math.max(-1, Math.min(1, value)) + 1) / 2) * 32;
-        return `${x},${y}`;
-      })
-      .join(" ");
-  }, [values]);
-
-  return (
-    <svg viewBox="0 0 100 40" className="h-24 w-full overflow-visible">
-      <line x1="0" x2="100" y1="20" y2="20" className="stroke-border" strokeWidth="0.7" />
-      <line x1="0" x2="100" y1="7.2" y2="7.2" className="stroke-muted-foreground/40" strokeDasharray="2 2" strokeWidth="0.7" />
-      {points ? <polyline points={points} fill="none" className="stroke-primary" strokeWidth="2.2" strokeLinecap="round" /> : null}
+function makeMockImageSrc(seed: number) {
+  const hueA = Math.round(8 + seededUnit(seed, 1) * 36);
+  const hueB = Math.round(178 + seededUnit(seed, 2) * 54);
+  const hueC = Math.round(248 + seededUnit(seed, 3) * 42);
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 720">
+      <defs>
+        <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="hsl(${hueA} 92% 68%)"/>
+          <stop offset="50%" stop-color="hsl(${hueB} 70% 50%)"/>
+          <stop offset="100%" stop-color="hsl(${hueC} 76% 60%)"/>
+        </linearGradient>
+        <radialGradient id="light" cx="68%" cy="18%" r="60%">
+          <stop offset="0%" stop-color="white" stop-opacity="0.62"/>
+          <stop offset="100%" stop-color="white" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="soften">
+          <feGaussianBlur stdDeviation="20"/>
+        </filter>
+      </defs>
+      <rect width="720" height="720" rx="42" fill="url(#bg)"/>
+      <rect width="720" height="720" rx="42" fill="url(#light)"/>
+      <ellipse cx="300" cy="360" rx="190" ry="150" fill="white" opacity="0.18" filter="url(#soften)"/>
+      <ellipse cx="500" cy="460" rx="160" ry="110" fill="black" opacity="0.10" filter="url(#soften)"/>
+      <path d="M100 528 C230 410 322 594 462 476 C522 426 588 410 642 438" fill="none" stroke="white" stroke-width="18" stroke-linecap="round" opacity="0.28"/>
     </svg>
-  );
+  `;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
 
-function FaaRewardBar({ reward, raw }: { reward: number; raw?: number | null }) {
-  const pct = rewardToPercent(reward);
-  const positive = reward >= 0;
+function makeMockSession(prompt: string) {
+  const seed = promptHash(prompt);
+  const reward = Number((-0.08 + seededUnit(seed, 8) * 0.72).toFixed(3));
+  const rawFaa = Number((reward * 0.22 + (seededUnit(seed, 9) - 0.5) * 0.04).toFixed(3));
+  const z = Array.from({ length: 8 }, (_, index) => Number((seededUnit(seed, index + 16) * 2 - 1).toFixed(3)));
+  const channels = Object.entries(epocPositions).map(([name, position], index) => ({
+    name,
+    value: Number(((seededUnit(seed, index + 32) - 0.5) * 18).toFixed(3)),
+    alpha_power: Number((0.2 + seededUnit(seed, index + 48) * 1.4 + Math.max(0, reward) * 0.35).toFixed(3)),
+    quality: Number((0.72 + seededUnit(seed, index + 64) * 0.22).toFixed(3)),
+    position,
+  }));
 
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <span>-1 avoid</span>
-        <span>0</span>
-        <span>+1 approach</span>
-      </div>
-      <div className="relative">
-        <Progress value={pct} className="h-3" />
-        <div className="absolute left-1/2 top-[-5px] h-6 w-px bg-foreground/50" />
-        <div className="absolute top-[-4px] h-5 w-1 rounded-full bg-white shadow" style={{ left: `calc(${pct}% - 2px)` }} />
-      </div>
-      <div className="grid grid-cols-2 gap-3 text-sm">
-        <div className="rounded-md border bg-muted/40 p-3">
-          <div className="text-xs text-muted-foreground">Reward</div>
-          <div className={cn("font-mono text-xl font-semibold", positive ? "text-emerald-300" : "text-sky-300")}>
-            {reward.toFixed(3)}
-          </div>
-        </div>
-        <div className="rounded-md border bg-muted/40 p-3">
-          <div className="text-xs text-muted-foreground">Raw FAA</div>
-          <div className="font-mono text-xl font-semibold">{raw == null ? "n/a" : raw.toFixed(3)}</div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ZMeters({ z }: { z: number[] }) {
-  return (
-    <div className="space-y-2">
-      {z.slice(0, 10).map((value, index) => {
-        const bounded = Math.max(-1, Math.min(1, value));
-        return (
-          <div key={index} className="grid grid-cols-[42px_1fr_54px] items-center gap-3 text-xs">
-            <span className="font-mono text-muted-foreground">z{index}</span>
-            <div className="relative h-2 rounded-full bg-muted">
-              <div className="absolute left-1/2 top-[-3px] h-4 w-px bg-border" />
-              <div
-                className={cn("absolute top-0 h-2 rounded-full", bounded >= 0 ? "bg-primary" : "bg-sky-400")}
-                style={
-                  bounded >= 0
-                    ? { left: "50%", width: `${bounded * 50}%` }
-                    : { left: `${50 + bounded * 50}%`, width: `${-bounded * 50}%` }
-                }
-              />
-            </div>
-            <span className="text-right font-mono text-muted-foreground">{bounded.toFixed(2)}</span>
-          </div>
-        );
-      })}
-    </div>
-  );
+  return {
+    candidateSrc: makeMockImageSrc(seed),
+    frame: {
+      frame_b64: "mock",
+      z,
+      step_index: 1,
+      t: Date.now() / 1000,
+      format: "mock",
+      state: "explore",
+      reward_estimate: reward,
+      eeg_features: {
+        channels,
+        faa: {
+          raw: rawFaa,
+          reward,
+          left_channel: "F3",
+          right_channel: "F4",
+        },
+      },
+    } satisfies FrameMessage,
+  };
 }
 
 export function NeurimDashboard() {
   const [url, setUrl] = useState("ws://localhost:8765");
-  const [remoteUrl, setRemoteUrl] = useState("http://localhost:8766");
   const [connected, setConnected] = useState(false);
   const [status, setStatus] = useState("Not connected");
   const [frame, setFrame] = useState<FrameMessage | null>(null);
   const [frameSrc, setFrameSrc] = useState<string | null>(null);
-  const [targetSrc, setTargetSrc] = useState<string | null>(null);
-  const [targetMissing, setTargetMissing] = useState(false);
-  const [rewardLog, setRewardLog] = useState<number[]>([]);
-  const [latencyMs, setLatencyMs] = useState<number | null>(null);
   const [fps, setFps] = useState(0);
-  const [desiredPrompt, setDesiredPrompt] = useState("");
-  const [anchorPrompts, setAnchorPrompts] = useState<string[]>([]);
-  const [controlledAxes, setControlledAxes] = useState<string[]>([]);
-  const [promptStatus, setPromptStatus] = useState("Enter a desired prompt to generate anchors.");
-  const [isGeneratingAnchors, setIsGeneratingAnchors] = useState(false);
-  const [isApplyingAnchors, setIsApplyingAnchors] = useState(false);
+  const [promptDraft, setPromptDraft] = useState("");
+  const [submittedPrompt, setSubmittedPrompt] = useState("");
+  const [sessionIntent, setSessionIntent] = useState<SessionIntentResponse | null>(null);
+  const [sessionStatus, setSessionStatus] = useState("Ready");
+  const [isSavingIntent, setIsSavingIntent] = useState(false);
+  const [showBrainActivity, setShowBrainActivity] = useState(true);
   const wsRef = useRef<WebSocket | null>(null);
   const frameCounter = useRef({ count: 0, startedAt: 0 });
 
   useEffect(() => {
     return () => wsRef.current?.close();
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    function refreshTarget() {
-      const probe = new Image();
-      const src = `/api/target-frame?t=${Date.now()}`;
-      probe.onload = () => {
-        if (!cancelled) {
-          setTargetSrc(src);
-          setTargetMissing(false);
-        }
-      };
-      probe.onerror = () => {
-        if (!cancelled) setTargetMissing(true);
-      };
-      probe.src = src;
-    }
-
-    refreshTarget();
-    const id = window.setInterval(refreshTarget, 1500);
-    return () => {
-      cancelled = true;
-      window.clearInterval(id);
-    };
   }, []);
 
   function connect() {
@@ -217,8 +219,6 @@ export function NeurimDashboard() {
         const now = Date.now();
         setFrame(msg);
         setFrameSrc(decodeFrameSrc(msg));
-        setLatencyMs(now - msg.t * 1000);
-        setRewardLog((prev) => [...prev.slice(-79), msg.reward_estimate]);
         if (frameCounter.current.startedAt === 0) {
           frameCounter.current = { count: 0, startedAt: now };
         }
@@ -251,353 +251,274 @@ export function NeurimDashboard() {
     setStatus("Disconnected");
   }
 
-  async function generateAnchors() {
-    const prompt = desiredPrompt.trim();
+  async function startLocalSession() {
+    const prompt = promptDraft.trim();
     if (!prompt) {
-      setPromptStatus("Enter a desired inferred prompt first.");
+      setSessionStatus("Write a prompt first.");
       return;
     }
-    setIsGeneratingAnchors(true);
-    setPromptStatus("Generating anchor prompts with OpenAI...");
+    setIsSavingIntent(true);
+    setSessionStatus("Starting local backend...");
     try {
-      const response = await fetch("/api/anchor-prompts/generate", {
+      const response = await fetch("/api/session-intent", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ desired_prompt: prompt }),
+        body: JSON.stringify({ prompt }),
       });
-      const json = await response.json();
-      if (!response.ok) throw new Error(json.error || "Failed to generate anchor prompts");
-      setAnchorPrompts(json.anchor_prompts);
-      setControlledAxes(json.controlled_axes ?? []);
-      setPromptStatus(`Generated 10 anchors with ${json.model}. Review and apply when ready.`);
+      const json = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(json.error || "Failed to save session intent");
+      const intent = json as SessionIntentResponse;
+      const acceptedPrompt = intent.prompt || prompt;
+      const mock = makeMockSession(acceptedPrompt);
+      setSessionIntent(intent);
+      setSubmittedPrompt(acceptedPrompt);
+      setPromptDraft("");
+      setFrame(mock.frame);
+      setFrameSrc(mock.candidateSrc);
+      setFps(24);
+      setShowBrainActivity(true);
+      setSessionStatus(intent.backend_session.pid ? `api_server.py accepted prompt · pid ${intent.backend_session.pid}` : "api_server.py accepted prompt");
     } catch (error) {
-      setPromptStatus(error instanceof Error ? error.message : String(error));
+      setSessionStatus(error instanceof Error ? error.message : String(error));
     } finally {
-      setIsGeneratingAnchors(false);
+      setIsSavingIntent(false);
     }
   }
 
-  async function applyAnchors() {
-    const prompts = anchorPrompts.map((prompt) => prompt.trim()).filter(Boolean);
-    if (prompts.length !== 10) {
-      setPromptStatus("Exactly 10 non-empty anchor prompts are required.");
-      return;
-    }
-    setIsApplyingAnchors(true);
-    setPromptStatus("Applying anchors to hub and remote diffusion server...");
-    try {
-      const response = await fetch("/api/anchor-prompts/apply", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          anchor_prompts: prompts,
-          remote_diffusion_url: remoteUrl.trim(),
-          hub_ws_url: url.trim(),
-        }),
-      });
-      const json = await response.json();
-      const remote = json.targets?.remote;
-      const hub = json.targets?.hub;
-      const parts = [
-        remote ? `remote ${remote.ok ? "ok" : `failed: ${remote.error}`}` : null,
-        hub ? `hub ${hub.ok ? "ok" : `failed: ${hub.error}`}` : null,
-      ].filter(Boolean);
-      if (!response.ok && response.status !== 207) throw new Error(json.error || "Failed to apply anchors");
-      setPromptStatus(parts.length ? `Apply complete: ${parts.join(" · ")}` : "Apply complete.");
-    } catch (error) {
-      setPromptStatus(error instanceof Error ? error.message : String(error));
-    } finally {
-      setIsApplyingAnchors(false);
-    }
-  }
-
+  const hasSession = Boolean(sessionIntent);
   const reward = frame?.eeg_features?.faa.reward ?? frame?.reward_estimate ?? 0;
-  const rawFaa = frame?.eeg_features?.faa.raw ?? null;
-  const state = frame?.state ?? "calibrate";
-  const hasRealEeg = Boolean(frame?.eeg_features?.channels?.length);
+  const eegMode = connected && frame?.eeg_features ? "live" : frame?.eeg_features ? "mock" : "fallback";
+  const previewBadge = connected ? "live" : frame ? "mock" : "idle";
 
   return (
-    <TooltipProvider>
-      <main className="mx-auto flex min-h-screen max-w-[1500px] flex-col gap-5 px-5 py-5 lg:px-7">
-        <header className="flex flex-col gap-4 border-b pb-5 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <div className="mb-2 flex items-center gap-2">
-              <Badge variant="secondary" className="gap-1">
-                <Brain className="h-3.5 w-3.5" />
-                NEURIM
-              </Badge>
-              <Badge variant={connected ? "default" : "outline"} className="gap-1">
-                {connected ? <Wifi className="h-3.5 w-3.5" /> : <Unplug className="h-3.5 w-3.5" />}
-                {status}
-              </Badge>
+    <main className="min-h-screen overflow-hidden">
+      <nav className="fixed inset-x-0 top-0 z-20">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4">
+          <div className="flex items-center gap-2 text-lg font-semibold">
+            <Brain className="h-5 w-5" />
+            NEURIM
+            {hasSession ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : null}
+          </div>
+          {hasSession ? (
+            <div className="rounded-full bg-muted px-4 py-2 text-sm text-muted-foreground">
+              Local session · {sessionIntent?.session_id.slice(0, 8)}
             </div>
-            <h1 className="text-2xl font-semibold tracking-normal lg:text-3xl">EEG reward control surface</h1>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-              Live generated frames, FAA reward, optimizer telemetry, and 3D EEG activity from the NEURIM hub.
+          ) : null}
+        </div>
+      </nav>
+
+      {!hasSession ? (
+        <section className="mx-auto flex min-h-screen max-w-6xl flex-col items-center justify-center px-4 py-24 text-center sm:px-6">
+          <h1 className="max-w-5xl text-balance text-5xl font-semibold leading-[1.02] sm:text-6xl lg:text-7xl">
+            Build an image with your brain signal
+          </h1>
+          <p className="mt-5 max-w-2xl text-lg leading-8 text-muted-foreground">
+            Describe the visual direction. A local backend session starts after submit.
+          </p>
+          <PromptComposer
+            value={promptDraft}
+            onChange={setPromptDraft}
+            onSubmit={startLocalSession}
+            isSubmitting={isSavingIntent}
+            examples={examplePrompts}
+            mode="hero"
+          />
+          <p className="mt-4 text-sm text-muted-foreground">{sessionStatus}</p>
+        </section>
+      ) : (
+        <section className="mx-auto flex min-h-screen max-w-6xl flex-col px-4 pb-40 pt-24 sm:px-6">
+          <div className="flex justify-end">
+            <div className="max-w-[520px] rounded-[22px] bg-muted px-5 py-4 text-left text-base shadow-sm">
+              {submittedPrompt}
+            </div>
+          </div>
+
+          <div className="mt-16 max-w-3xl">
+            <div className="mb-4 text-sm text-muted-foreground">{sessionStatus}</div>
+            <h2 className="text-3xl font-semibold tracking-normal">Prompt sent to local backend.</h2>
+            <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
+              api_server.py accepted the prompt and started the local session.
             </p>
           </div>
 
-          <div className="flex w-full gap-2 lg:w-[520px]">
-            <Input value={url} onChange={(event) => setUrl(event.target.value)} disabled={connected} className="font-mono" />
-            {connected ? (
-              <Button variant="destructive" onClick={disconnect}>
-                <CircleStop className="h-4 w-4" />
-                Disconnect
-              </Button>
-            ) : (
-              <Button onClick={connect}>
-                <Radio className="h-4 w-4" />
-                Connect
-              </Button>
-            )}
-          </div>
-        </header>
-
-        <section className="grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(420px,0.75fr)]">
-          <Card>
-            <CardHeader className="flex-row items-center justify-between space-y-0">
-              <div>
-                <CardTitle>Target comparison</CardTitle>
-                <CardDescription>Hidden target beside the live candidate for real-time comparison</CardDescription>
-              </div>
-              <Badge variant="outline" className="font-mono">
-                {frame?.format?.toUpperCase() ?? "NO FRAME"} · {fps} fps
-              </Badge>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-3 lg:grid-cols-2">
-                <div>
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="font-mono text-xs uppercase tracking-wide text-muted-foreground">Target</span>
-                    <Badge variant={targetMissing ? "outline" : "secondary"}>{targetMissing ? "missing" : "file"}</Badge>
+          <section className="grid grid-rows-[1fr] transition-[grid-template-rows,opacity,transform] duration-700 ease-out">
+            <div className="overflow-hidden">
+              <div className="mt-10 rounded-[30px] border bg-card p-4 shadow-[0_24px_90px_rgba(16,24,40,0.12)]">
+                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <div className="text-sm font-semibold">Live build preview</div>
+                    <div className="text-sm text-muted-foreground">Local prompt accepted · brain activity and candidate frame</div>
                   </div>
-                  <div className="relative aspect-square overflow-hidden rounded-md border bg-black">
-                    {targetSrc ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={targetSrc} alt="Target frame" className="h-full w-full object-contain" />
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <Badge variant={connected ? "default" : "outline"} className="w-fit gap-1 rounded-full">
+                      {connected ? <Wifi className="h-3.5 w-3.5" /> : <Unplug className="h-3.5 w-3.5" />}
+                      {status}
+                    </Badge>
+                    <Input value={url} onChange={(event) => setUrl(event.target.value)} disabled={connected} className="h-10 bg-card font-mono sm:w-[250px]" />
+                    {connected ? (
+                      <Button variant="destructive" onClick={disconnect} className="h-10 shrink-0">
+                        <CircleStop className="h-4 w-4" />
+                        Disconnect
+                      </Button>
                     ) : (
-                      <div className="flex h-full items-center justify-center px-6 text-center text-sm text-muted-foreground">
-                        Run scripted fake loop to create data/processed/target_frame.png
-                      </div>
+                      <Button onClick={connect} className="h-10 shrink-0">
+                        <Radio className="h-4 w-4" />
+                        Connect
+                      </Button>
                     )}
+                    <Button
+                      type="button"
+                      variant={showBrainActivity ? "default" : "secondary"}
+                      onClick={() => setShowBrainActivity((value) => !value)}
+                      aria-expanded={showBrainActivity}
+                      className="h-10 shrink-0"
+                    >
+                      <Brain className="h-4 w-4" />
+                      {showBrainActivity ? "Hide brain" : "Show brain"}
+                    </Button>
                   </div>
                 </div>
-                <div>
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="font-mono text-xs uppercase tracking-wide text-muted-foreground">Live candidate</span>
-                    <Badge variant={connected ? "default" : "outline"}>{connected ? "live" : "stale"}</Badge>
-                  </div>
-                  <div className="relative aspect-square overflow-hidden rounded-md border bg-black">
-                    {frameSrc ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={frameSrc} alt="Live generated NEURIM frame" className="h-full w-full object-contain" />
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                        Connect to the hub to receive frames
+
+                <div className={cn("grid gap-4", showBrainActivity ? "lg:grid-cols-[1fr_1fr]" : "lg:grid-cols-1")}>
+                  {showBrainActivity ? (
+                    <div className="rounded-[24px] border bg-[#091013] p-3">
+                      <div className="mb-3 flex items-center justify-between px-1">
+                        <div>
+                          <div className="text-sm font-semibold text-white">3D brain analogy</div>
+                          <div className="text-xs text-white/60">Scroll or pinch to zoom</div>
+                        </div>
+                        <Badge variant="secondary" className="rounded-full">
+                          {eegMode}
+                        </Badge>
                       </div>
-                    )}
-                    <div className="absolute right-3 top-3 rounded-md border bg-background/80 px-2 py-1 font-mono text-xs">
-                      step {frame?.step_index ?? "—"}
+                      <BrainActivity3D features={frame?.eeg_features} reward={reward} className="h-[430px] border-0" />
                     </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                  ) : null}
 
-          <div className="space-y-5">
-            <Card>
-              <CardHeader className="flex-row items-center justify-between space-y-0">
-                <div>
-                  <CardTitle>FAA reward</CardTitle>
-                  <CardDescription>Frontal alpha asymmetry signal</CardDescription>
-                </div>
-                <Badge className="capitalize" variant={state === "recover" ? "destructive" : "secondary"}>
-                  {stateLabels[state] ?? state}
-                </Badge>
-              </CardHeader>
-              <CardContent>
-                <FaaRewardBar reward={reward} raw={rawFaa} />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Brain activity map</CardTitle>
-                <CardDescription>
-                  {hasRealEeg ? "Driven by EEG alpha-band power" : "Synthetic fallback until EEG features arrive"}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <BrainActivity3D features={frame?.eeg_features} reward={reward} />
-                <div className="grid grid-cols-3 gap-2 text-xs">
-                  <div className="rounded-md border bg-muted/30 p-2">
-                    <div className="text-muted-foreground">Channels</div>
-                    <div className="font-mono text-lg">{frame?.eeg_features?.channels.length ?? 14}</div>
-                  </div>
-                  <div className="rounded-md border bg-muted/30 p-2">
-                    <div className="text-muted-foreground">Latency</div>
-                    <div className="font-mono text-lg">{formatMs(latencyMs)}</div>
-                  </div>
-                  <div className="rounded-md border bg-muted/30 p-2">
-                    <div className="text-muted-foreground">State</div>
-                    <div className="truncate font-mono text-lg">{state}</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </section>
-
-        <section className="grid gap-5 lg:grid-cols-[0.8fr_1.2fr]">
-          <Card className="lg:col-span-2">
-            <CardHeader className="flex-row items-start justify-between space-y-0">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Wand2 className="h-4 w-4 text-primary" />
-                  Anchor prompt generation
-                </CardTitle>
-                <CardDescription>Generate ten coherent anchor prompts from the desired inferred prompt, then hot-apply them.</CardDescription>
-              </div>
-              <Badge variant={anchorPrompts.length === 10 ? "default" : "outline"}>{anchorPrompts.length}/10 anchors</Badge>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-3 lg:grid-cols-[1fr_280px]">
-                <textarea
-                  value={desiredPrompt}
-                  onChange={(event) => setDesiredPrompt(event.target.value)}
-                  placeholder="Example: a calm photorealistic golden retriever puppy on white bedding"
-                  className="min-h-24 w-full resize-y rounded-md border bg-input px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                />
-                <div className="space-y-2">
-                  <Input
-                    value={remoteUrl}
-                    onChange={(event) => setRemoteUrl(event.target.value)}
-                    className="font-mono"
-                    placeholder="http://localhost:8766"
-                  />
-                  <Button className="w-full" onClick={generateAnchors} disabled={isGeneratingAnchors}>
-                    <Sparkles className="h-4 w-4" />
-                    {isGeneratingAnchors ? "Generating..." : "Generate anchors"}
-                  </Button>
-                  <Button
-                    className="w-full"
-                    variant="secondary"
-                    onClick={applyAnchors}
-                    disabled={isApplyingAnchors || anchorPrompts.length !== 10}
-                  >
-                    {isApplyingAnchors ? <Save className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
-                    {isApplyingAnchors ? "Applying..." : "Apply to system"}
-                  </Button>
-                </div>
-              </div>
-
-              {controlledAxes.length ? (
-                <div className="rounded-md border bg-muted/25 p-3">
-                  <div className="mb-2 font-mono text-xs uppercase tracking-wide text-muted-foreground">Controlled axes</div>
-                  <div className="flex flex-wrap gap-2">
-                    {controlledAxes.map((axis, index) => (
-                      <Badge key={`${axis}-${index}`} variant="outline">
-                        {axis}
+                  <div className="rounded-[24px] border bg-[#0b0f14] p-3">
+                    <div className="mb-3 flex items-center justify-between px-1">
+                      <div>
+                        <div className="text-sm font-semibold text-white">Live candidate</div>
+                        <div className="text-xs text-white/60">Generated from the prompt</div>
+                      </div>
+                      <Badge variant="secondary" className="rounded-full">
+                        {previewBadge} · {fps} fps
                       </Badge>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-
-              {anchorPrompts.length ? (
-                <div className="grid gap-3 lg:grid-cols-5">
-                  {anchorPrompts.map((prompt, index) => (
-                    <div key={index} className="rounded-md border bg-muted/25 p-3">
-                      <div className="mb-2 font-mono text-xs text-muted-foreground">Anchor {index + 1}</div>
-                      <textarea
-                        value={prompt}
-                        onChange={(event) => {
-                          const next = [...anchorPrompts];
-                          next[index] = event.target.value;
-                          setAnchorPrompts(next);
-                        }}
-                        className="min-h-36 w-full resize-y rounded-md border bg-background px-3 py-2 text-xs leading-5 outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      />
                     </div>
-                  ))}
-                </div>
-              ) : null}
-
-              <div className="rounded-md border bg-muted/30 px-3 py-2 font-mono text-xs text-muted-foreground">
-                {promptStatus}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Gauge className="h-4 w-4 text-primary" />
-                Reward history
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Sparkline values={rewardLog} />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="h-4 w-4 text-primary" />
-                Optimizer telemetry
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Tabs defaultValue="latent">
-                <TabsList>
-                  <TabsTrigger value="latent">Latent vector</TabsTrigger>
-                  <TabsTrigger value="stream">Stream</TabsTrigger>
-                </TabsList>
-                <TabsContent value="latent">
-                  <ZMeters z={frame?.z ?? []} />
-                </TabsContent>
-                <TabsContent value="stream">
-                  <div className="grid gap-3 text-sm sm:grid-cols-4">
-                    <Metric label="Step" value={String(frame?.step_index ?? "—")} />
-                    <Metric label="Reward" value={reward.toFixed(3)} />
-                    <Metric label="Format" value={frame?.format?.toUpperCase() ?? "—"} />
-                    <Metric label="Dimensions" value={frame?.z ? `${frame.z.length}D` : "—"} />
+                    <div className="relative aspect-square overflow-hidden rounded-[18px] bg-black">
+                      {frameSrc ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={frameSrc} alt="Live generated NEURIM frame" className="h-full w-full object-cover" />
+                      ) : (
+                        <div className="flex h-full items-center justify-center px-6 text-center text-sm text-white/58">
+                          Waiting for generated frame.
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <Separator className="my-4" />
-                  <Alert>
-                    <Sparkles className="mr-2 inline h-4 w-4 text-primary" />
-                    <AlertTitle className="inline">Compatibility mode</AlertTitle>
-                    <AlertDescription className="mt-1">
-                      The dashboard accepts older frame messages without EEG features and switches the 3D panel to a synthetic fallback.
-                    </AlertDescription>
-                  </Alert>
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
-        </section>
+                </div>
+              </div>
+            </div>
+          </section>
 
-        <footer className="pb-4 text-xs text-muted-foreground">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="cursor-help underline decoration-dotted">Run the hub</span>
-            </TooltipTrigger>
-            <TooltipContent>python scripts/run_demo.py --serve --mock</TooltipContent>
-          </Tooltip>{" "}
-          and connect this dashboard to <code>ws://localhost:8765</code>.
-        </footer>
-      </main>
-    </TooltipProvider>
+          <div className="fixed inset-x-0 bottom-0 z-20 bg-gradient-to-t from-background via-background/95 to-transparent px-4 pb-5 pt-16">
+            <PromptComposer
+              value={promptDraft}
+              onChange={setPromptDraft}
+              onSubmit={startLocalSession}
+              isSubmitting={isSavingIntent}
+              mode="chat"
+            />
+            <p className="mx-auto mt-3 max-w-4xl text-center text-xs text-muted-foreground">
+              NEURIM local sessions can be wrong. Check live headset and renderer outputs before using them.
+            </p>
+          </div>
+        </section>
+      )}
+    </main>
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
+function PromptComposer({
+  value,
+  onChange,
+  onSubmit,
+  isSubmitting,
+  examples = [],
+  mode,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  onSubmit: () => void;
+  isSubmitting: boolean;
+  examples?: string[];
+  mode: "hero" | "chat";
+}) {
   return (
-    <div className="rounded-md border bg-muted/30 p-3">
-      <div className="text-xs text-muted-foreground">{label}</div>
-      <div className="mt-1 font-mono text-lg font-semibold">{value}</div>
-    </div>
+    <form
+      className={cn(
+        "mx-auto w-full max-w-4xl border bg-card text-left shadow-[0_24px_90px_rgba(16,24,40,0.14)]",
+        mode === "hero" ? "mt-10 rounded-[28px] p-3" : "rounded-[24px] p-4"
+      )}
+      onSubmit={(event) => {
+        event.preventDefault();
+        onSubmit();
+      }}
+    >
+      <textarea
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={mode === "hero" ? "Ask NEURIM to build a visual concept..." : "Write a message..."}
+        className={cn(
+          "w-full resize-none border-0 bg-transparent outline-none placeholder:text-muted-foreground",
+          mode === "hero" ? "min-h-32 rounded-[20px] px-4 py-4 text-lg leading-7" : "min-h-12 px-1 text-lg leading-7"
+        )}
+      />
+
+      {mode === "hero" ? (
+        <div className="flex flex-col gap-3 border-t px-2 pt-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap gap-2">
+            {examples.map((prompt) => (
+              <button
+                key={prompt}
+                type="button"
+                onClick={() => onChange(prompt)}
+                className="rounded-full border bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground transition hover:border-primary hover:text-foreground"
+              >
+                {prompt}
+              </button>
+            ))}
+          </div>
+          <Button type="submit" className="h-11 rounded-full px-5" disabled={isSubmitting}>
+            {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            Build
+          </Button>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between pt-2">
+          <Button type="button" variant="ghost" size="icon" aria-label="Add context">
+            <Plus className="h-5 w-5" />
+          </Button>
+          <div className="flex items-center gap-3">
+            <button type="button" className="hidden items-center gap-1 text-sm font-medium text-muted-foreground sm:flex">
+              NEURIM local
+              <ChevronDown className="h-4 w-4" />
+            </button>
+            <Button type="button" variant="ghost" size="icon" aria-label="Settings">
+              <SlidersHorizontal className="h-5 w-5" />
+            </Button>
+            <Button type="button" variant="ghost" size="icon" aria-label="Voice">
+              <Mic className="h-5 w-5" />
+            </Button>
+            <Button type="button" variant="ghost" size="icon" aria-label="Audio">
+              <AudioLines className="h-5 w-5" />
+            </Button>
+            <Button type="submit" size="icon" aria-label="Send prompt" disabled={isSubmitting}>
+              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            </Button>
+          </div>
+        </div>
+      )}
+    </form>
   );
 }

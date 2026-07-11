@@ -26,24 +26,24 @@
 
 :root {
   --radius: 0.5rem;
-  --background: #0c1114;
-  --foreground: #e8f0ed;
-  --card: #121a1e;
-  --card-foreground: #e8f0ed;
-  --popover: #121a1e;
-  --popover-foreground: #e8f0ed;
-  --primary: #f2a340;
-  --primary-foreground: #251706;
-  --secondary: #1a252a;
-  --secondary-foreground: #d9e7e2;
-  --muted: #182327;
-  --muted-foreground: #8fa39e;
-  --accent: #223138;
-  --accent-foreground: #e8f0ed;
-  --destructive: #d85b52;
-  --border: #26363d;
-  --input: #223138;
-  --ring: #f2a340;
+  --background: #fbfcff;
+  --foreground: #111827;
+  --card: #ffffff;
+  --card-foreground: #111827;
+  --popover: #ffffff;
+  --popover-foreground: #111827;
+  --primary: #f45f5f;
+  --primary-foreground: #ffffff;
+  --secondary: #eef3f8;
+  --secondary-foreground: #1d2939;
+  --muted: #f3f6fa;
+  --muted-foreground: #667085;
+  --accent: #e6f6ef;
+  --accent-foreground: #125d3c;
+  --destructive: #dc3d43;
+  --border: #d9e1ea;
+  --input: #ffffff;
+  --ring: #f45f5f;
 }
 
 * {
@@ -55,9 +55,11 @@ html,
 body {
   min-height: 100%;
   background:
-    radial-gradient(circle at 18% 0%, rgba(76, 154, 91, 0.14), transparent 26rem),
-    radial-gradient(circle at 85% 10%, rgba(242, 163, 64, 0.12), transparent 28rem),
+    linear-gradient(rgba(17, 24, 39, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(17, 24, 39, 0.035) 1px, transparent 1px),
+    linear-gradient(180deg, #ffffff 0%, #f7fbff 48%, #fbfcff 100%),
     var(--background);
+  background-size: 32px 32px, 32px 32px, auto;
   color: var(--foreground);
 }
 
