@@ -148,7 +148,7 @@ if __name__ == "__main__":
     parser.add_argument("--mode", choices=["scripted", "keyboard"], default="scripted")
     parser.add_argument("--max-steps", type=int, default=100)
     parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--algorithm", choices=["hill_climb", "es_1p1", "gp_bo"], default=None)
+    parser.add_argument("--algorithm", choices=["hill_climb", "es_1p1", "gp_bo", "latent_turbo"], default=None)
     args = parser.parse_args()
 
     cfg = Config.load()

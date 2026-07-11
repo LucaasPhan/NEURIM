@@ -96,7 +96,7 @@ def main() -> None:
     parser.add_argument("--mock", action="store_true", help="use synthetic EEG instead of real hardware")
     parser.add_argument("--backend", choices=["procedural", "diffusion", "remote_diffusion", "openai"], default=None)
     parser.add_argument("--remote-url", default=None, help="remote diffusion server URL when using remote_diffusion")
-    parser.add_argument("--algorithm", choices=["hill_climb", "es_1p1", "gp_bo"], default=None)
+    parser.add_argument("--algorithm", choices=["hill_climb", "es_1p1", "gp_bo", "latent_turbo"], default=None)
     parser.add_argument("--serve", action="store_true", help="run the websocket hub instead of local mode")
     parser.add_argument("--host", default="0.0.0.0", help="websocket host when using --serve")
     parser.add_argument("--port", type=int, default=8765, help="websocket port when using --serve")

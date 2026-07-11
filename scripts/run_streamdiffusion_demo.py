@@ -146,7 +146,7 @@ def main() -> None:
     parser.add_argument("--t-index-list", default="0,16", help="comma-separated denoising step indices")
     parser.add_argument("--acceleration", default="xformers", choices=["none", "xformers", "tensorrt"])
     parser.add_argument("--seed", type=int, default=None, help="defaults to config.generator.remote_diffusion_seed")
-    parser.add_argument("--algorithm", choices=["hill_climb", "es_1p1", "gp_bo"], default=None)
+    parser.add_argument("--algorithm", choices=["hill_climb", "es_1p1", "gp_bo", "latent_turbo"], default=None)
     args = parser.parse_args()
 
     config = Config.load()

@@ -75,7 +75,7 @@ def main() -> None:
     parser.add_argument("--server-url", default="http://localhost:8766",
                         help="base URL of run_streamdiffusion_server.py")
     parser.add_argument("--seed", type=int, default=0, help="which fixed target image to converge to")
-    parser.add_argument("--algorithm", choices=["hill_climb", "es_1p1", "gp_bo"], default=None)
+    parser.add_argument("--algorithm", choices=["hill_climb", "es_1p1", "gp_bo", "latent_turbo"], default=None)
     parser.add_argument("--noise", type=float, default=0.05, help="reward noise std (higher = harder)")
     parser.add_argument("--frames-per-step", type=int, default=6,
                         help="interpolated frames rendered between optimizer steps")

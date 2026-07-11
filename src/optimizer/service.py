@@ -14,12 +14,15 @@ from src.common.config import Config
 from src.common.messages import LatentMessage
 from src.optimizer.evolution import GPBanditOptimizer, OnePlusOneES
 from src.optimizer.hill_climb import MomentumHillClimb
+from src.optimizer.latent_turbo import NoiseAwareLatentTuRBO
+from src.optimizer.observation import window_statistics
 from src.optimizer.state_machine import StateMachine
 
 _ALGORITHMS = {
     "hill_climb": MomentumHillClimb,
     "es_1p1": OnePlusOneES,
     "gp_bo": GPBanditOptimizer,
+    "latent_turbo": NoiseAwareLatentTuRBO,
 }
 
 
@@ -42,6 +45,8 @@ def _build_algorithm(config: Config):
             sigma=config.optimizer.step_size_explore,
             noise_threshold=config.optimizer.noise_threshold,
         )
+    if algo_cls is NoiseAwareLatentTuRBO:
+        return NoiseAwareLatentTuRBO(dims, bounds=bounds)
     return GPBanditOptimizer(dims, bounds=bounds)
 
 
@@ -81,11 +86,22 @@ class OptimizerService:
             return None
 
         windowed_reward = float(np.mean(self._reward_buffer))
-        self._reward_buffer.clear()
-
         reward_before = self._current_reward_estimate
         candidate = self._candidate
-        accepted = self.optimizer.update(candidate, reward_before, windowed_reward)
+
+        # Uncertainty-aware optimizers (Noise-Aware Latent TuRBO) consume the
+        # whole window as an Observation - mean + variance + effective N +
+        # artifact fraction - rather than a single averaged scalar, so a stable
+        # reading weighs more than a motion-artifact one. Everything else gets
+        # the plain windowed mean.
+        if getattr(self.optimizer, "wants_observation", False):
+            observation = window_statistics(
+                self._reward_buffer, clip=self.config.faa.clip, t=self._step_index
+            )
+            accepted = self.optimizer.observe(candidate, observation)
+        else:
+            accepted = self.optimizer.update(candidate, reward_before, windowed_reward)
+        self._reward_buffer.clear()
         if accepted:
             self._current_reward_estimate = windowed_reward
 

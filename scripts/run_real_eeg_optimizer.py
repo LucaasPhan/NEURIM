@@ -112,7 +112,7 @@ def main() -> None:
                         help="rest-calibration seconds (default: config faa.baseline_duration_s)")
     parser.add_argument("--server-url", default="http://localhost:8766",
                         help="base URL of run_streamdiffusion_server.py")
-    parser.add_argument("--algorithm", choices=["hill_climb", "es_1p1", "gp_bo"], default=None)
+    parser.add_argument("--algorithm", choices=["hill_climb", "es_1p1", "gp_bo", "latent_turbo"], default=None)
     parser.add_argument("--frames-per-step", type=int, default=6,
                         help="interpolated frames rendered between optimizer steps")
     parser.add_argument("--set-anchors", action="store_true",

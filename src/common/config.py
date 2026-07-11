@@ -56,7 +56,7 @@ class OptimizerConfig:
     noise_threshold: float = 0.05
     reward_window_steps: int = 4
     bounds: float = 1.0
-    algorithm: str = "hill_climb"  # "hill_climb" | "es_1p1" | "gp_bo"
+    algorithm: str = "hill_climb"  # "hill_climb" | "es_1p1" | "gp_bo" | "latent_turbo"
 
 
 @dataclass
