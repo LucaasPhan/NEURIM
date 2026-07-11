@@ -156,6 +156,7 @@ class BreedMorphRenderServer:
         dtype,
         num_inference_steps: int,
         guidance_scale: float,
+        softmax_temperature: float,
     ):
         self.pipe = pipe
         self.breeds = breeds
@@ -166,6 +167,7 @@ class BreedMorphRenderServer:
         self.dtype = dtype
         self.num_inference_steps = num_inference_steps
         self.guidance_scale = guidance_scale
+        self.softmax_temperature = softmax_temperature
         self.lock = threading.Lock()
 
     def render_png(self, payload: dict) -> bytes:
@@ -183,7 +185,7 @@ class BreedMorphRenderServer:
             )
 
         with self.lock:
-            weights = softmax_weights(z)
+            weights = softmax_weights(z, temperature=self.softmax_temperature)
             prompt_embeds = blend_prompt_embeds(self.breed_embeds, weights)
             latents = blend_noise_latents(self.breed_latents, weights)
             with torch.inference_mode():
@@ -293,6 +295,10 @@ def main() -> None:
                         help="denoising steps - 1-4 for sd-turbo, 20-50 for a plain SD checkpoint")
     parser.add_argument("--guidance-scale", type=float, default=0.0,
                         help="0.0 (default, no CFG) for turbo/LCM. ~7-8 for a plain SD checkpoint.")
+    parser.add_argument("--temperature", type=float, default=3.0,
+                        help="softmax temperature for z -> breed weights. Higher values make the same "
+                             "optimizer movement snap more strongly toward one breed/species; lower values "
+                             "produce smoother but more uniform blends.")
     parser.add_argument("--seed", type=int, default=None,
                         help="per-breed latent seed (default: config.generator.remote_diffusion_seed)")
     args = parser.parse_args()
@@ -330,13 +336,14 @@ def main() -> None:
 
     render_server = BreedMorphRenderServer(
         pipe, list(args.breeds), breed_embeds, breed_latents, frame_size,
-        device, dtype, args.steps, args.guidance_scale,
+        device, dtype, args.steps, args.guidance_scale, args.temperature,
     )
 
     server = ThreadingHTTPServer((args.host, args.port), make_handler(render_server))
     print(f"[breed-morph-server] listening on http://{args.host}:{args.port} "
           f"(breeds={len(args.breeds)}, seed={seed}, size={frame_size}, "
-          f"steps={args.steps}, guidance_scale={args.guidance_scale})")
+          f"steps={args.steps}, guidance_scale={args.guidance_scale}, "
+          f"temperature={args.temperature})")
     print(f"[breed-morph-server] breeds: {', '.join(args.breeds)}")
     server.serve_forever()
 
