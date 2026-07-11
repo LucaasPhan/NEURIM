@@ -128,7 +128,7 @@ manifest, compares it with the private diffusion server's `GET /manifest`
 response, and starts the optimizer only if they match. The private diffusion
 server must already be running with that manifest.
 
-### API-managed local diffusion
+### API-managed same-machine diffusion
 
 For a same-machine GPU setup, `api_server.py` can own the diffusion process.
 In this mode, each frontend prompt curates a new manifest, restarts
@@ -164,6 +164,40 @@ Optional environment variables:
 Do not run `run_mock_optimizer.py` or `run_real_eeg_optimizer.py` separately in
 this mode. The frontend starts sessions through `api_server.py`, and the API
 owns the optimizer loop.
+
+### API-managed remote GPU diffusion
+
+When the EPOC X headset is connected to the local machine but CUDA is on a
+private GPU server, keep `api_server.py` local and run a lightweight diffusion
+supervisor on the GPU server.
+
+On the GPU server:
+
+```bash
+NEURIM_DIFFUSION_HOST=127.0.0.1 \
+NEURIM_DIFFUSION_PORT=8766 \
+NEURIM_DIFFUSION_PUBLIC_URL=http://GPU_HOST:8766 \
+NEURIM_DIFFUSION_CUDA_VISIBLE_DEVICES=4 \
+python scripts/diffusion_supervisor.py --host 0.0.0.0 --port 8010
+```
+
+On the local machine with EMOTIV Launcher and the EPOC X:
+
+```powershell
+$env:NEURIM_DIFFUSION_SUPERVISOR_URL="http://GPU_HOST:8010"
+python scripts/api_server.py --host 127.0.0.1 --port 8000
+```
+
+Then run the frontend locally:
+
+```bash
+cd frontend-app
+NEURIM_API_URL=http://127.0.0.1:8000 npm run dev
+```
+
+In this mode, the local API curates the prompt and owns EEG/optimizer. The GPU
+supervisor receives the curated manifest, restarts the diffusion renderer on
+the GPU server, and returns the render URL to the local API.
 
 ## Core Services
 

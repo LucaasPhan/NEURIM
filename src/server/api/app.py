@@ -9,6 +9,7 @@ from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 from .diffusion_process import DiffusionProcessManager
+from .diffusion_supervisor_client import RemoteDiffusionSupervisorClient
 from .eeg import EEGConnectionManager
 from .manager import SessionManager
 from .models import StartSessionRequest
@@ -23,7 +24,12 @@ def create_app(
     api_settings = settings or ApiSettings.from_env()
     eeg = eeg_manager or EEGConnectionManager()
     diffusion_process_manager = None
-    if api_settings.manage_diffusion:
+    if api_settings.diffusion_supervisor_url:
+        diffusion_process_manager = RemoteDiffusionSupervisorClient(
+            api_settings.diffusion_supervisor_url,
+            timeout_s=api_settings.diffusion_startup_timeout_s,
+        )
+    elif api_settings.manage_diffusion:
         diffusion_process_manager = DiffusionProcessManager(
             repo_root=REPO_ROOT,
             host=api_settings.diffusion_host,

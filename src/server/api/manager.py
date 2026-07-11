@@ -118,7 +118,7 @@ class SessionManager:
             with self._lock:
                 self._logs.append("[api] restarting managed diffusion server")
             try:
-                self.diffusion_process_manager.restart(manifest_path)
+                self.diffusion_process_manager.restart(manifest_path, manifest)
             except Exception as exc:  # noqa: BLE001
                 raise HTTPException(
                     status_code=502,

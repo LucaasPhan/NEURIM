@@ -21,6 +21,7 @@ class ApiSettings:
     diffusion_cuda_visible_devices: str | None = None
     diffusion_python: str | None = None
     diffusion_model: str = "stabilityai/sd-turbo"
+    diffusion_supervisor_url: str | None = None
     cors_origins: tuple[str, ...] = (
         "http://localhost:3000",
         "http://127.0.0.1:3000",
@@ -69,5 +70,6 @@ class ApiSettings:
             diffusion_cuda_visible_devices=os.environ.get("NEURIM_DIFFUSION_CUDA_VISIBLE_DEVICES"),
             diffusion_python=os.environ.get("NEURIM_DIFFUSION_PYTHON"),
             diffusion_model=os.environ.get("NEURIM_DIFFUSION_MODEL", defaults.diffusion_model),
+            diffusion_supervisor_url=os.environ.get("NEURIM_DIFFUSION_SUPERVISOR_URL"),
             cors_origins=configured_origins,
         )

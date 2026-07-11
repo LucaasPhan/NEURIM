@@ -43,7 +43,7 @@ class DiffusionProcessManager:
     def base_url(self) -> str:
         return f"http://{self.host}:{self.port}"
 
-    def restart(self, manifest_path: Path) -> dict[str, Any]:
+    def restart(self, manifest_path: Path, _manifest: Any | None = None) -> dict[str, Any]:
         self.stop()
         command = [
             self.python_executable,

@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 from src.common.config import Config
 from src.generator.prompt_curation import PROMPT_CURATION_VERSION, PromptCurationManifest
 from src.server.api.app import create_app
+from src.server.api.diffusion_supervisor_client import RemoteDiffusionSupervisorClient
 from src.server.api.manager import SessionManager
 from src.session.frame_store import FrameStore
 
@@ -55,8 +56,9 @@ class FakeDiffusionProcessManager:
         self.restarts = []
         self.stopped = False
 
-    def restart(self, manifest_path):
+    def restart(self, manifest_path, manifest=None):
         self.restarts.append(manifest_path)
+        self.manifest = manifest
         if self.raise_exc is not None:
             raise self.raise_exc
         return {}
@@ -374,3 +376,30 @@ def test_managed_diffusion_startup_failure_returns_bad_gateway(tmp_path):
 
     assert response.status_code == 502
     assert "managed diffusion startup failed" in response.json()["detail"]
+
+
+def test_remote_diffusion_supervisor_client_posts_manifest(monkeypatch, tmp_path):
+    manifest = _manifest("cat")
+    calls = []
+
+    class FakeResponse:
+        status_code = 200
+
+        @staticmethod
+        def json():
+            return {"render_url": "http://gpu:8766"}
+
+    def fake_post(url, json, timeout):
+        calls.append((url, json, timeout))
+        return FakeResponse()
+
+    monkeypatch.setattr("requests.post", fake_post)
+    client = RemoteDiffusionSupervisorClient("http://gpu:8010/", timeout_s=12)
+
+    client.restart(tmp_path / "cat.json", manifest)
+
+    assert client.base_url == "http://gpu:8766"
+    assert calls[0][0] == "http://gpu:8010/diffusion/restart"
+    assert calls[0][1]["filename"] == "cat.json"
+    assert calls[0][1]["manifest"]["user_prompt"] == "cat"
+    assert calls[0][2] == 12
