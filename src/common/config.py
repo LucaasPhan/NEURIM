@@ -120,6 +120,10 @@ class GeneratorConfig:
     openai_image_size: str = "1024x1024"
     openai_image_quality: str = "low"
     openai_image_output_format: str = "png"
+    # After the session's last morphed frame is rendered, run it back through
+    # OpenAI's image-edit API to resolve morph artifacts into a clean image
+    # before handing it to the frontend (src/generator/image_finalize.py).
+    finalize_enabled: bool = True
     target_fps: int = 30
     frame_size: int = 512
     anchor_prompts: list[str] = field(default_factory=list)

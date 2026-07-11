@@ -22,6 +22,15 @@ class FrameStore:
     def save_end(self, png_bytes: bytes) -> Path:
         return self.save(png_bytes, "session_end.png")
 
+    def save_target(self, png_bytes: bytes) -> Path:
+        """The finalized image the frontend displays (GET /api/target-frame)."""
+        return self.save(png_bytes, "target_frame.png")
+
+    def clear_target(self) -> None:
+        """Drop a previous session's finalized image so the frontend only sees
+        this session's result once it lands."""
+        (self.directory / "target_frame.png").unlink(missing_ok=True)
+
     def save(self, png_bytes: bytes, name: str) -> Path:
         self.directory.mkdir(parents=True, exist_ok=True)
         destination = self.directory / name

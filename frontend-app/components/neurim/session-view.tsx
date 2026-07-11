@@ -23,6 +23,8 @@ export function SessionView({ session }: { session: NeurimSession }) {
     frameSrc,
     fps,
     reward,
+    finalSrc,
+    completed,
     showBrain,
     setShowBrain,
     wsUrl,
@@ -54,7 +56,13 @@ export function SessionView({ session }: { session: NeurimSession }) {
         ) : (
           <div className="flex flex-col items-stretch gap-6 md:flex-row">
             <div className="md:flex-[1.35]">
-              <HeroCandidate frameSrc={frameSrc} state={state} fps={fps} />
+              <HeroCandidate
+                frameSrc={frameSrc}
+                finalSrc={finalSrc}
+                completed={completed}
+                state={state}
+                fps={fps}
+              />
             </div>
             <SignalRail
               reward={reward}

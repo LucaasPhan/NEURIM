@@ -28,6 +28,7 @@ from .models import StartSessionRequest
 from .settings import REPO_ROOT
 
 DiffusionClientFactory = Callable[[str, float], DiffusionClient]
+FinalizerFactory = Callable[[], Any]
 
 
 def _utc_now() -> str:
@@ -66,6 +67,7 @@ class SessionManager:
         eeg_manager: EEGConnectionManager | None = None,
         curation_service: PromptCurationService | None = None,
         diffusion_client_factory: DiffusionClientFactory | None = None,
+        finalizer_factory: FinalizerFactory | None = None,
         config: Config | None = None,
     ) -> None:
         self.repo_root = repo_root
@@ -77,6 +79,7 @@ class SessionManager:
         self.diffusion_client_factory = diffusion_client_factory or (
             lambda server_url, timeout: DiffusionClient(server_url, timeout)
         )
+        self.finalizer_factory = finalizer_factory
         self._lock = threading.Lock()
         self._thread: threading.Thread | None = None
         self._stop_event: threading.Event | None = None
@@ -104,12 +107,16 @@ class SessionManager:
         client = self.diffusion_client_factory(request.server_url, 30.0)
         remote_manifest = self._load_remote_manifest(client)
         self._validate_remote_manifest(manifest, remote_manifest)
+        frame_store = FrameStore()
+        frame_store.clear_target()
         loop = OptimizerRenderLoop(
             self.config,
             frames_per_step=6,
             client=client,
-            frame_store=FrameStore(),
+            frame_store=frame_store,
             capture_snapshots=not request.mock,
+            finalizer=self._make_finalizer(),
+            finalize_prompt=prompt,
         )
         stop_event = threading.Event()
         thread = threading.Thread(
@@ -156,6 +163,28 @@ class SessionManager:
         with self._lock:
             self._refresh_locked()
             return {"lines": self._logs.tail(lines)}
+
+    def _make_finalizer(self):
+        """The OpenAI finalize pass, or None to skip it. A missing API key or an
+        unavailable SDK degrades to None (raw final frame) instead of failing
+        the session start."""
+        if self.finalizer_factory is not None:
+            return self.finalizer_factory()
+        generator = self.config.generator
+        if not generator.finalize_enabled:
+            return None
+        try:
+            from src.generator.image_finalize import ImageFinalizer
+
+            return ImageFinalizer(
+                model=generator.openai_image_model,
+                size=generator.openai_image_size,
+                quality=generator.openai_image_quality,
+                frame_size=generator.frame_size,
+            )
+        except Exception as exc:  # noqa: BLE001
+            self._append_log(f"[api] image finalizer unavailable, using raw final frame: {exc}")
+            return None
 
     def _curate_manifest(self, prompt: str) -> PromptCurationManifest:
         try:
