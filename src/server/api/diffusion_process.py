@@ -27,7 +27,7 @@ class DiffusionProcessManager:
         python_executable: str | None = None,
         cuda_visible_devices: str | None = None,
         model: str = "stabilityai/sd-turbo",
-        steps: int = 1,
+        steps: int = 2,
         guidance_scale: float = 0.0,
         temperature: float = 8.0,
         size: int | None = None,

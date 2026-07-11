@@ -65,7 +65,7 @@ def create_app(
         python_executable=os.environ.get("NEURIM_DIFFUSION_PYTHON"),
         cuda_visible_devices=os.environ.get("NEURIM_DIFFUSION_CUDA_VISIBLE_DEVICES"),
         model=os.environ.get("NEURIM_DIFFUSION_MODEL", "stabilityai/sd-turbo"),
-        steps=_env_int("NEURIM_DIFFUSION_STEPS", 1),
+        steps=_env_int("NEURIM_DIFFUSION_STEPS", 2),
         guidance_scale=_env_float("NEURIM_DIFFUSION_GUIDANCE_SCALE", 0.0),
         temperature=_env_float("NEURIM_DIFFUSION_TEMPERATURE", 8.0),
         size=_env_int("NEURIM_DIFFUSION_SIZE", 0) or None,

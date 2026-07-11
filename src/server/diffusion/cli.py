@@ -26,7 +26,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--model", default="stabilityai/sd-turbo")
     parser.add_argument("--target-anchor", default=None)
     parser.add_argument("--size", type=int, default=None)
-    parser.add_argument("--steps", type=int, default=1)
+    parser.add_argument("--steps", type=int, default=2)
     parser.add_argument("--guidance-scale", type=float, default=0.0)
     parser.add_argument("--temperature", type=float, default=3.0)
     parser.add_argument("--log-weights-every", type=int, default=12)

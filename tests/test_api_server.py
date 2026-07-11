@@ -149,6 +149,9 @@ def test_start_mock_session_curates_manifest_and_starts_thread(tmp_path):
     assert body["prompt"] == "cat"
     assert body["pid"] is None
     assert body["manifest_path"].endswith("-cat.json")
+    assert body["reward_estimate"] == 0.0
+    assert body["optimizer_state"] == "calibrate"
+    assert body["step_index"] == 0
     assert curation.writes[0][0].user_prompt == "cat"
     manager.stop()
 

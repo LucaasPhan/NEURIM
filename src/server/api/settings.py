@@ -21,7 +21,7 @@ class ApiSettings:
     diffusion_cuda_visible_devices: str | None = None
     diffusion_python: str | None = None
     diffusion_model: str = "stabilityai/sd-turbo"
-    diffusion_steps: int = 1
+    diffusion_steps: int = 2
     diffusion_guidance_scale: float = 0.0
     diffusion_temperature: float = 8.0
     diffusion_size: int | None = None

@@ -56,6 +56,7 @@ export function useSession(): NeurimSession {
   const [resultRefined, setResultRefined] = useState(false);
   const [finalizeError, setFinalizeError] = useState<string | null>(null);
   const [isRetryingFinalization, setIsRetryingFinalization] = useState(false);
+  const [liveReward, setLiveReward] = useState(0);
   const finalUrlRef = useRef<string | null>(null);
   const { src: liveSrc, available: liveAvailable, reset: resetLive } = usePngFrame(
     active && !offline && backendPhase !== "completed",
@@ -93,6 +94,7 @@ export function useSession(): NeurimSession {
         setBackendPhase(status.phase);
         setResultRefined(status.result_refined);
         setFinalizeError(status.finalize_error);
+        setLiveReward(Number.isFinite(status.reward_estimate) ? status.reward_estimate : 0);
 
         if (status.phase === "finalizing") {
           setStatusText("Refining the final image with OpenAI");
@@ -133,6 +135,7 @@ export function useSession(): NeurimSession {
     setFinalSrc(null);
     setResultRefined(false);
     setFinalizeError(null);
+    setLiveReward(0);
     revokeFinal();
     resetLive();
     setStatusText("Rendering the first frame");
@@ -204,6 +207,7 @@ export function useSession(): NeurimSession {
     setResultRefined(false);
     setFinalizeError(null);
     setIsRetryingFinalization(false);
+    setLiveReward(0);
   }, [resetLive, revokeFinal]);
 
   const completed = backendPhase === "completed" && Boolean(finalSrc);
@@ -230,7 +234,9 @@ export function useSession(): NeurimSession {
     frame,
     frameSrc,
     fps: 0,
-    reward: frame?.eeg_features?.faa.reward ?? frame?.reward_estimate ?? 0,
+    reward: offline
+      ? (frame?.eeg_features?.faa.reward ?? frame?.reward_estimate ?? 0)
+      : liveReward,
     finalSrc,
     completed,
     resultRefined,

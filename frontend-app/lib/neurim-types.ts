@@ -47,6 +47,10 @@ export type BackendSession = {
   result_ready: boolean;
   result_refined: boolean;
   finalize_error: string | null;
+  reward_estimate: number;
+  raw_reward: number | null;
+  optimizer_state: FrameState;
+  step_index: number;
 };
 
 export type SessionIntentResponse = {

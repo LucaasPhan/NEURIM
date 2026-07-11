@@ -97,6 +97,10 @@ class SessionManager:
         self._result_ready = False
         self._result_refined = False
         self._finalize_error: str | None = None
+        self._latest_reward = 0.0
+        self._latest_raw_reward: float | None = None
+        self._latest_optimizer_state = "calibrate"
+        self._latest_step_index = 0
 
     def start(self, request: StartSessionRequest) -> dict[str, Any]:
         prompt = (request.prompt or "").strip()
@@ -163,6 +167,10 @@ class SessionManager:
             self._result_ready = False
             self._result_refined = False
             self._finalize_error = None
+            self._latest_reward = 0.0
+            self._latest_raw_reward = None
+            self._latest_optimizer_state = "calibrate"
+            self._latest_step_index = 0
             self._logs.append(f"[api] manifest: {manifest_path}")
             self._logs.append(f"[api] render server: {server_url}")
             thread.start()
@@ -342,6 +350,13 @@ class SessionManager:
                     continue
                 loop.render_candidate(np.asarray(result.z, dtype=float))
                 raw = message.raw_faa if message.raw_faa is not None else float("nan")
+                with self._lock:
+                    self._latest_reward = float(result.reward_estimate)
+                    self._latest_raw_reward = (
+                        float(message.raw_faa) if message.raw_faa is not None else None
+                    )
+                    self._latest_optimizer_state = str(result.state)
+                    self._latest_step_index = int(result.step_index)
                 self._append_log(
                     f"{result.step_index:>4} {result.state:>9} "
                     f"{result.reward_estimate:>+7.2f} {raw:>+7.2f} {loop.frame_count}"
@@ -425,4 +440,8 @@ class SessionManager:
             "result_ready": self._result_ready,
             "result_refined": self._result_refined,
             "finalize_error": self._finalize_error,
+            "reward_estimate": self._latest_reward,
+            "raw_reward": self._latest_raw_reward,
+            "optimizer_state": self._latest_optimizer_state,
+            "step_index": self._latest_step_index,
         }
