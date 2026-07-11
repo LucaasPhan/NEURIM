@@ -24,6 +24,9 @@ out/
 frontend-app/node_modules/
 frontend-app/.next/
 
+# Generated / local HTML artifacts
+*.html
+
 # Env / secrets
 .env
 
