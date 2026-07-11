@@ -47,6 +47,15 @@ python scripts/run_general_stable_diffusion.py \
   --port 8766
 ```
 
+Select a specific GPU when the private machine exposes multiple CUDA devices:
+
+```bash
+CUDA_VISIBLE_DEVICES=4 python scripts/run_general_stable_diffusion.py \
+  --session-manifest data/processed/prompt_sessions/mammoths.json \
+  --host 0.0.0.0 \
+  --port 8766
+```
+
 The private server exposes:
 
 - `GET /manifest`: active manifest metadata and render endpoint.
