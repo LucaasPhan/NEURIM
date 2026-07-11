@@ -59,6 +59,22 @@ def test_successful_connect_runs_30_second_calibration():
     assert datetime.fromisoformat(status["last_calibrated_at"])
 
 
+def test_connection_lifecycle_prints_status_logs(capsys):
+    manager = EEGConnectionManager(
+        source_factory=lambda: FakeSource(),
+        calibrator=lambda _computer, _stream, _seconds: None,
+        calibration_seconds=0.0,
+    )
+
+    manager._connect_and_calibrate()
+    output = capsys.readouterr().out
+
+    assert "[eeg] connecting to EPOC X via Cortex" in output
+    assert "[eeg] EPOC X connected; building FAA reward service" in output
+    assert "[eeg] calibrating baseline for 0.0s" in output
+    assert "[eeg] EPOC X ready" in output
+
+
 def test_retry_now_marks_retry_due():
     manager = EEGConnectionManager(
         source_factory=lambda: FakeSource(fail=True),

@@ -66,7 +66,7 @@ export function HeroCandidate({
           "dark:text-[#dfe1e6] dark:bg-black/45 dark:border-white/10 dark:backdrop-blur",
         )}
       >
-        {showFinal ? "OpenAI · finalized" : `${modelLabel} · ${fps} fps`}
+        {showFinal ? "OpenAI · finalized" : fps > 0 ? `${modelLabel} · ${fps} fps` : modelLabel}
       </div>
     </div>
   );

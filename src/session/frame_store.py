@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 
 DEFAULT_PROCESSED_DIR = Path(__file__).resolve().parents[2] / "data" / "processed"
 
@@ -31,8 +33,22 @@ class FrameStore:
         this session's result once it lands."""
         (self.directory / "target_frame.png").unlink(missing_ok=True)
 
+    def clear_live(self) -> None:
+        """Drop the previous session's live image before accepting a new prompt."""
+        (self.directory / "live_frame.png").unlink(missing_ok=True)
+
     def save(self, png_bytes: bytes, name: str) -> Path:
         self.directory.mkdir(parents=True, exist_ok=True)
         destination = self.directory / name
-        destination.write_bytes(png_bytes)
+        # Readers poll these files while renders are being written. Replace a
+        # complete temporary file atomically so they never observe a partial PNG.
+        with NamedTemporaryFile(dir=self.directory, prefix=f".{name}.", delete=False) as handle:
+            temporary = Path(handle.name)
+            handle.write(png_bytes)
+            handle.flush()
+            os.fsync(handle.fileno())
+        try:
+            temporary.replace(destination)
+        finally:
+            temporary.unlink(missing_ok=True)
         return destination

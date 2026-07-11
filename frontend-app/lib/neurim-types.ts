@@ -43,6 +43,10 @@ export type BackendSession = {
   prompt: string | null;
   exit_code: number | null;
   manifest_path?: string | null;
+  phase: "idle" | "running" | "finalizing" | "completed" | "failed";
+  result_ready: boolean;
+  result_refined: boolean;
+  finalize_error: string | null;
 };
 
 export type SessionIntentResponse = {

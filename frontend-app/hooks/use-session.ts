@@ -1,15 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useFrameStream } from "@/hooks/use-frame-stream";
-import { makeMockSession, type MockSession } from "@/lib/mock-frame";
-import type { FrameMessage, SessionIntentResponse } from "@/lib/neurim-types";
+import { usePngFrame } from "@/hooks/use-png-frame";
+import { makeMockSession } from "@/lib/mock-frame";
+import type { BackendSession, FrameMessage, SessionIntentResponse } from "@/lib/neurim-types";
 
-export type SessionPhase = "idle" | "processing" | "live";
-
-// The processing beat before the mock frame is revealed when no real frame
-// has arrived from an auto-connected hub.
-const REVEAL_DELAY_MS = 1400;
+export type SessionPhase = "idle" | "processing" | "live" | "finalizing" | "completed";
 
 export interface NeurimSession {
   phase: SessionPhase;
@@ -18,33 +14,23 @@ export interface NeurimSession {
   statusText: string;
   offline: boolean;
   isSubmitting: boolean;
-
   connected: boolean;
   frame: FrameMessage | null;
   frameSrc: string | null;
   fps: number;
   reward: number;
-
-  // The OpenAI-finalized image, fetched once the backend session completes.
   finalSrc: string | null;
   completed: boolean;
-
-  wsUrl: string;
-  setWsUrl: (url: string) => void;
-
+  resultRefined: boolean;
+  finalizeError: string | null;
+  isRetryingFinalization: boolean;
   showBrain: boolean;
   setShowBrain: (value: boolean) => void;
-
   startSession: (prompt: string) => Promise<void>;
+  retryFinalization: () => Promise<void>;
   reset: () => void;
 }
 
-/**
- * Top-level session orchestration. Posts the prompt intent (falling back to an
- * offline/mock session when the backend is down), runs the processing beat, and
- * merges the live frame stream with the deterministic mock so the display
- * always has something to show.
- */
 export function useSession(): NeurimSession {
   const [active, setActive] = useState(false);
   const [submittedPrompt, setSubmittedPrompt] = useState("");
@@ -53,77 +39,75 @@ export function useSession(): NeurimSession {
   const [offline, setOffline] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showBrain, setShowBrain] = useState(true);
-  const [mock, setMock] = useState<MockSession | null>(null);
-  // Set true only when the fallback timer fires; a real frame reveals via render.
-  const [timedOut, setTimedOut] = useState(false);
-  const revealTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // The finalized image the backend writes once the run ends (target_frame.png,
-  // served by /api/target-frame). Held as an object URL so we can revoke it.
+  const [offlineFrame, setOfflineFrame] = useState<FrameMessage | null>(null);
+  const [offlineSrc, setOfflineSrc] = useState<string | null>(null);
+  const [backendPhase, setBackendPhase] = useState<BackendSession["phase"]>("idle");
   const [finalSrc, setFinalSrc] = useState<string | null>(null);
-  const [completed, setCompleted] = useState(false);
+  const [resultRefined, setResultRefined] = useState(false);
+  const [finalizeError, setFinalizeError] = useState<string | null>(null);
+  const [isRetryingFinalization, setIsRetryingFinalization] = useState(false);
   const finalUrlRef = useRef<string | null>(null);
-
-  const stream = useFrameStream(active);
+  const { src: liveSrc, available: liveAvailable, reset: resetLive } = usePngFrame(
+    active && !offline && backendPhase !== "completed",
+  );
 
   const revokeFinal = useCallback(() => {
-    if (finalUrlRef.current) {
-      URL.revokeObjectURL(finalUrlRef.current);
-      finalUrlRef.current = null;
-    }
+    if (finalUrlRef.current) URL.revokeObjectURL(finalUrlRef.current);
+    finalUrlRef.current = null;
   }, []);
 
-  useEffect(() => {
-    return () => {
-      if (revealTimer.current) clearTimeout(revealTimer.current);
-      revokeFinal();
-    };
+  const loadFinalFrame = useCallback(async () => {
+    const response = await fetch(`/api/target-frame?ts=${Date.now()}`, { cache: "no-store" });
+    if (!response.ok) return false;
+    const nextUrl = URL.createObjectURL(await response.blob());
+    revokeFinal();
+    finalUrlRef.current = nextUrl;
+    setFinalSrc(nextUrl);
+    return true;
   }, [revokeFinal]);
 
-  // While a real (non-offline) session runs, poll the backend for completion.
-  // exit_code flips from null to a value only once THIS session's thread exits,
-  // by which point save_final_frame() has already written the finalized image.
-  useEffect(() => {
-    if (!active || offline || !sessionId || completed) return;
-    let cancelled = false;
+  useEffect(() => () => revokeFinal(), [revokeFinal]);
 
-    const loadFinalFrame = async () => {
-      try {
-        const res = await fetch(`/api/target-frame?ts=${Date.now()}`, { cache: "no-store" });
-        if (!res.ok || cancelled) return;
-        const url = URL.createObjectURL(await res.blob());
-        revokeFinal();
-        finalUrlRef.current = url;
-        setFinalSrc(url);
-        setStatusText("Final image ready");
-      } catch {
-        // Backend/file not reachable — leave the live/mock frame in place.
-      }
-    };
+  useEffect(() => {
+    if (!active || offline || !sessionId) return;
+    let cancelled = false;
+    let inFlight = false;
 
     const poll = async () => {
+      if (inFlight) return;
+      inFlight = true;
       try {
-        const res = await fetch("/api/session-status", { cache: "no-store" });
-        if (!res.ok || cancelled) return;
-        const status = (await res.json()) as { running?: boolean; exit_code?: number | null };
-        if (!status.running && status.exit_code != null) {
-          // Session ended — stop polling (via the `completed` effect dep) and
-          // swap in the finalized image if the backend produced one.
-          setCompleted(true);
-          await loadFinalFrame();
+        const response = await fetch("/api/session-status", { cache: "no-store" });
+        if (!response.ok || cancelled) return;
+        const status = (await response.json()) as BackendSession;
+        setBackendPhase(status.phase);
+        setResultRefined(status.result_refined);
+        setFinalizeError(status.finalize_error);
+
+        if (status.phase === "finalizing") {
+          setStatusText("Refining the final image with OpenAI");
+        } else if (status.phase === "failed") {
+          setStatusText(status.finalize_error || "Session failed");
+        } else if (status.phase === "completed" && status.result_ready && !finalSrc) {
+          if (await loadFinalFrame()) {
+            setStatusText(status.result_refined ? "Final image ready" : "Unrefined final frame ready");
+            setIsRetryingFinalization(false);
+          }
         }
       } catch {
-        // api_server.py down — keep polling; the mock path still shows something.
+        // Preserve the current view and retry while the local API restarts.
+      } finally {
+        inFlight = false;
       }
     };
 
-    const id = setInterval(poll, 2000);
     poll();
+    const interval = setInterval(poll, 500);
     return () => {
       cancelled = true;
-      clearInterval(id);
+      clearInterval(interval);
     };
-  }, [active, offline, sessionId, completed, revokeFinal]);
+  }, [active, offline, sessionId, finalSrc, loadFinalFrame]);
 
   const startSession = useCallback(async (rawPrompt: string) => {
     const prompt = rawPrompt.trim();
@@ -134,15 +118,14 @@ export function useSession(): NeurimSession {
 
     setIsSubmitting(true);
     setActive(true);
-    setTimedOut(false);
-    setCompleted(false);
-    revokeFinal();
+    setOffline(false);
+    setBackendPhase("running");
     setFinalSrc(null);
-    setStatusText("Reading your signal — rendering the first frame");
-
-    // Fall back to the mock frame if auto-connect delivers nothing in time.
-    if (revealTimer.current) clearTimeout(revealTimer.current);
-    revealTimer.current = setTimeout(() => setTimedOut(true), REVEAL_DELAY_MS);
+    setResultRefined(false);
+    setFinalizeError(null);
+    revokeFinal();
+    resetLive();
+    setStatusText("Rendering the first frame");
 
     try {
       const response = await fetch("/api/session-intent", {
@@ -151,54 +134,70 @@ export function useSession(): NeurimSession {
         body: JSON.stringify({ prompt }),
       });
       const json = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(json.error || "Failed to save session intent");
+      if (!response.ok) throw new Error(json.error || "Failed to start session");
       const intent = json as SessionIntentResponse;
-      const accepted = intent.prompt || prompt;
-      setSubmittedPrompt(accepted);
+      setSubmittedPrompt(intent.prompt || prompt);
       setSessionId(intent.session_id);
-      setOffline(false);
-      setMock(makeMockSession(accepted, Date.now() / 1000));
-      setStatusText(
-        intent.backend_session.pid
-          ? `api_server.py accepted prompt · pid ${intent.backend_session.pid}`
-          : "api_server.py accepted prompt"
-      );
-    } catch {
-      // Resilience: still enter the session view in an offline/mock state.
+      setBackendPhase(intent.backend_session.phase || "running");
+      setStatusText("Session running");
+    } catch (error) {
+      const fallback = makeMockSession(prompt, Date.now() / 1000);
       setSubmittedPrompt(prompt);
       setSessionId(`local-${Date.now().toString(36).slice(-6)}`);
       setOffline(true);
-      setMock(makeMockSession(prompt, Date.now() / 1000));
-      setStatusText("Offline · showing mock preview");
+      setOfflineFrame(fallback.frame);
+      setOfflineSrc(fallback.candidateSrc);
+      setStatusText(error instanceof Error ? error.message : "Offline preview");
     } finally {
       setIsSubmitting(false);
     }
+  }, [resetLive, revokeFinal]);
+
+  const retryFinalization = useCallback(async () => {
+    setIsRetryingFinalization(true);
+    const response = await fetch("/api/finalize-retry", { method: "POST", cache: "no-store" });
+    const json = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setIsRetryingFinalization(false);
+      setFinalizeError(json.detail || json.error || "Could not retry refinement");
+      return;
+    }
+    setFinalSrc(null);
+    revokeFinal();
+    setBackendPhase("finalizing");
+    setFinalizeError(null);
+    setStatusText("Retrying OpenAI refinement");
   }, [revokeFinal]);
 
   const reset = useCallback(() => {
-    if (revealTimer.current) clearTimeout(revealTimer.current);
-    stream.disconnect();
+    resetLive();
+    revokeFinal();
     setActive(false);
-    setTimedOut(false);
     setSubmittedPrompt("");
     setSessionId(null);
     setStatusText("Ready");
     setOffline(false);
-    setMock(null);
-    setCompleted(false);
-    revokeFinal();
+    setOfflineFrame(null);
+    setOfflineSrc(null);
+    setBackendPhase("idle");
     setFinalSrc(null);
-  }, [stream, revokeFinal]);
+    setResultRefined(false);
+    setFinalizeError(null);
+    setIsRetryingFinalization(false);
+  }, [resetLive, revokeFinal]);
 
-  // Derive the phase: a real frame OR the fallback timer ends the processing beat.
-  const revealed = timedOut || stream.frame != null;
-  const phase: SessionPhase = !active ? "idle" : revealed ? "live" : "processing";
-
-  // Prefer the live frame; fall back to the revealed mock.
-  const frame = stream.frame ?? (revealed ? mock?.frame ?? null : null);
-  const frameSrc = stream.frameSrc ?? (revealed ? mock?.candidateSrc ?? null : null);
-  const fps = stream.connected && stream.frame ? stream.fps : 24;
-  const reward = frame?.eeg_features?.faa.reward ?? frame?.reward_estimate ?? 0;
+  const completed = backendPhase === "completed" && Boolean(finalSrc);
+  const phase: SessionPhase = !active
+    ? "idle"
+    : completed
+      ? "completed"
+      : backendPhase === "finalizing"
+        ? "finalizing"
+        : (liveAvailable || offlineSrc)
+          ? "live"
+          : "processing";
+  const frame = offline ? offlineFrame : null;
+  const frameSrc = offline ? offlineSrc : liveSrc;
 
   return {
     phase,
@@ -207,18 +206,20 @@ export function useSession(): NeurimSession {
     statusText,
     offline,
     isSubmitting,
-    connected: stream.connected,
+    connected: liveAvailable,
     frame,
     frameSrc,
-    fps,
-    reward,
+    fps: 0,
+    reward: frame?.eeg_features?.faa.reward ?? frame?.reward_estimate ?? 0,
     finalSrc,
     completed,
-    wsUrl: stream.url,
-    setWsUrl: stream.setUrl,
+    resultRefined,
+    finalizeError,
+    isRetryingFinalization,
     showBrain,
     setShowBrain,
     startSession,
+    retryFinalization,
     reset,
   };
 }

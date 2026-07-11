@@ -91,6 +91,7 @@ def _client(tmp_path, *, eeg_ready=False, remote_manifest=None):
         eeg_manager=eeg,
         curation_service=curation,
         diffusion_client_factory=lambda _url, _timeout: FakeDiffusionClient(remote_manifest),
+        frame_store_factory=lambda: FrameStore(tmp_path),
     )
     return TestClient(create_app(session_manager=manager, eeg_manager=eeg)), manager, eeg, curation
 
@@ -217,7 +218,7 @@ class RecordingFinalizer:
         return b"FINAL:" + png
 
 
-def test_real_session_runs_finalize_and_writes_target_frame(tmp_path, monkeypatch):
+def test_real_session_runs_finalize_and_writes_target_frame(tmp_path):
     # A real (non-mock) session captures snapshots, so the last frame flows
     # through the finalizer and lands as target_frame.png for the frontend.
     finalizer = RecordingFinalizer()
@@ -228,9 +229,8 @@ def test_real_session_runs_finalize_and_writes_target_frame(tmp_path, monkeypatc
         curation_service=FakeCurationService(),
         diffusion_client_factory=lambda _url, _timeout: FakeDiffusionClient(),
         finalizer_factory=lambda: finalizer,
+        frame_store_factory=lambda: FrameStore(tmp_path),
     )
-    # Redirect FrameStore's default output dir into tmp so the assertion is isolated.
-    monkeypatch.setattr("src.server.api.manager.FrameStore", lambda: FrameStore(tmp_path))
     client = TestClient(create_app(session_manager=manager, eeg_manager=eeg))
 
     response = client.post("/session/start", json={"prompt": "cat", "mock": False})
@@ -248,6 +248,51 @@ def test_real_session_runs_finalize_and_writes_target_frame(tmp_path, monkeypatc
     assert (tmp_path / "session_end.png").read_bytes() == raw
     assert (tmp_path / "target_frame.png").read_bytes() == b"FINAL:" + raw
     assert finalizer.calls and finalizer.calls[0][1] == "cat"
+    status = manager.status()
+    assert status["phase"] == "completed"
+    assert status["result_ready"] is True
+    assert status["result_refined"] is True
+    assert status["finalize_error"] is None
+
+
+def test_retry_finalization_refines_saved_raw_frame(tmp_path):
+    finalizer = RecordingFinalizer()
+    manager = SessionManager(
+        repo_root=tmp_path,
+        curation_service=FakeCurationService(),
+        finalizer_factory=lambda: finalizer,
+        frame_store_factory=lambda: FrameStore(tmp_path),
+    )
+    FrameStore(tmp_path).save_end(b"raw-png")
+    manager._prompt = "cat"
+    client = TestClient(create_app(session_manager=manager, eeg_manager=FakeEEGManager()))
+
+    response = client.post("/session/finalize/retry")
+    assert response.status_code == 200
+    for _ in range(50):
+        if not manager.status()["running"]:
+            break
+        time.sleep(0.01)
+
+    assert (tmp_path / "target_frame.png").read_bytes() == b"FINAL:raw-png"
+    assert manager.status()["result_refined"] is True
+    assert finalizer.calls == [(b"raw-png", "cat")]
+
+
+def test_retry_finalization_requires_completed_raw_frame(tmp_path):
+    manager = SessionManager(
+        repo_root=tmp_path,
+        curation_service=FakeCurationService(),
+        finalizer_factory=RecordingFinalizer,
+        frame_store_factory=lambda: FrameStore(tmp_path),
+    )
+    manager._prompt = "cat"
+    client = TestClient(create_app(session_manager=manager, eeg_manager=FakeEEGManager()))
+
+    response = client.post("/session/finalize/retry")
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "session_end.png not found"
 
 
 def test_make_finalizer_uses_injected_factory(tmp_path):

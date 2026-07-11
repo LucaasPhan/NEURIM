@@ -26,6 +26,10 @@ def _iso(value: datetime | None) -> str | None:
     return value.isoformat() if value is not None else None
 
 
+def _log(message: str) -> None:
+    print(f"[eeg] {message}", flush=True)
+
+
 class EEGConnectionManager:
     """Owns the real EEG source while the API process is alive."""
 
@@ -62,8 +66,10 @@ class EEGConnectionManager:
             self._wake.set()
             self._thread = threading.Thread(target=self._run, name="neurim-eeg-connector", daemon=True)
             self._thread.start()
+            _log("connector started")
 
     def close(self) -> None:
+        _log("connector stopping")
         self._stop.set()
         self._wake.set()
         thread = self._thread
@@ -72,6 +78,7 @@ class EEGConnectionManager:
         with self._lock:
             self._close_source_locked()
             self._state = "disconnected"
+        _log("disconnected")
 
     def retry_now(self) -> dict[str, Any]:
         with self._lock:
@@ -79,6 +86,9 @@ class EEGConnectionManager:
                 self._state = "disconnected"
                 self._next_retry_at = _utc_now()
                 self._wake.set()
+                _log("manual retry requested")
+            else:
+                _log(f"manual retry ignored; state={self._state}")
         return self.status()
 
     def status(self) -> dict[str, Any]:
@@ -121,8 +131,10 @@ class EEGConnectionManager:
                 self._last_error = None
                 self._next_retry_at = None
                 self._close_source_locked()
+            _log("connecting to EPOC X via Cortex")
             source = self.source_factory()
             source.connect()
+            _log("EPOC X connected; building FAA reward service")
             signal_service = build_faa_service(self.config, source)
             reward_source = signal_service.reward_source
             with self._lock:
@@ -130,11 +142,13 @@ class EEGConnectionManager:
                 self._reward_source = reward_source  # type: ignore[assignment]
                 self._state = "calibrating"
                 self._last_connected_at = _utc_now()
+            _log(f"calibrating baseline for {self.calibration_seconds:.1f}s")
             self.calibrator(reward_source.computer, source.stream(), self.calibration_seconds)
             with self._lock:
                 self._state = "ready"
                 self._last_calibrated_at = _utc_now()
                 self._next_retry_at = None
+            _log("EPOC X ready")
         except Exception as exc:  # noqa: BLE001
             if source is not None:
                 try:
@@ -147,6 +161,8 @@ class EEGConnectionManager:
                 self._state = "error"
                 self._last_error = str(exc)
                 self._next_retry_at = _utc_now() + timedelta(seconds=self.retry_interval_s)
+                retry_at = self._next_retry_at
+            _log(f"EPOC X connection failed: {exc}; retry at {_iso(retry_at)}")
 
     def _seconds_until_retry(self) -> float:
         with self._lock:

@@ -51,21 +51,23 @@ class OptimizerRenderLoop:
         self.frame_store.save_live(png, capture_start=self.capture_snapshots)
         return png
 
-    def save_final_frame(self) -> None:
-        if self.client is None or not self.capture_snapshots:
-            return
+    def save_final_frame(self) -> tuple[bool, str | None]:
+        if self.client is None:
+            return False, "render client is unavailable"
         png = self.client.render(self.optimizer.current_z(), self.config.generator.frame_size)
         self.frame_store.save_end(png)
         # Finalize the last morphed frame through OpenAI, then hand it to the
         # frontend. On any failure the raw frame is still delivered so the
         # session always ends with something to show.
-        self.frame_store.save_target(self._finalize(png))
+        finalized, refined, error = self._finalize(png)
+        self.frame_store.save_target(finalized)
+        return refined, error
 
-    def _finalize(self, png: bytes) -> bytes:
+    def _finalize(self, png: bytes) -> tuple[bytes, bool, str | None]:
         if self.finalizer is None:
-            return png
+            return png, False, "OpenAI image refinement is unavailable"
         try:
-            return self.finalizer.finalize(png, self.finalize_prompt)
+            return self.finalizer.finalize(png, self.finalize_prompt), True, None
         except Exception as exc:  # noqa: BLE001
             print(f"[optimizer-loop] image finalize failed, using raw final frame: {exc}")
-            return png
+            return png, False, str(exc)

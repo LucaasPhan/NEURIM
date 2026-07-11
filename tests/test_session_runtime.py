@@ -78,6 +78,15 @@ def test_frame_store_clear_target_is_idempotent(tmp_path):
     store.clear_target()  # no error when already gone
 
 
+def test_frame_store_clears_stale_live_frame(tmp_path):
+    store = FrameStore(tmp_path)
+    store.save_live(_png_bytes())
+
+    store.clear_live()
+
+    assert not (tmp_path / "live_frame.png").exists()
+
+
 class FakeRenderClient:
     def __init__(self, png):
         self.png = png
@@ -138,7 +147,7 @@ def test_save_final_frame_without_finalizer_serves_raw_frame(tmp_path):
     assert (tmp_path / "target_frame.png").read_bytes() == png
 
 
-def test_save_final_frame_noop_without_snapshots(tmp_path):
+def test_save_final_frame_still_delivers_result_without_snapshots(tmp_path):
     png = _png_bytes()
     loop = OptimizerRenderLoop(
         Config(),
@@ -149,7 +158,19 @@ def test_save_final_frame_noop_without_snapshots(tmp_path):
         finalizer=FakeFinalizer(),
     )
 
-    loop.save_final_frame()
+    refined, error = loop.save_final_frame()
 
-    assert not (tmp_path / "target_frame.png").exists()
-    assert not (tmp_path / "session_end.png").exists()
+    assert refined is True
+    assert error is None
+    assert (tmp_path / "target_frame.png").read_bytes() == b"FINAL:" + png
+    assert (tmp_path / "session_end.png").read_bytes() == png
+
+
+def test_frame_store_replaces_polled_file_without_leaving_temporary_files(tmp_path):
+    store = FrameStore(tmp_path)
+
+    store.save_live(b"first")
+    store.save_live(b"second")
+
+    assert (tmp_path / "live_frame.png").read_bytes() == b"second"
+    assert list(tmp_path.glob(".live_frame.png.*")) == []
