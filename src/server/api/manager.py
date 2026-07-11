@@ -29,6 +29,7 @@ from .settings import REPO_ROOT
 
 DiffusionClientFactory = Callable[[str, float], DiffusionClient]
 FinalizerFactory = Callable[[], Any]
+FrameStoreFactory = Callable[[], FrameStore]
 
 
 def _utc_now() -> str:
@@ -68,6 +69,7 @@ class SessionManager:
         curation_service: PromptCurationService | None = None,
         diffusion_client_factory: DiffusionClientFactory | None = None,
         finalizer_factory: FinalizerFactory | None = None,
+        frame_store_factory: FrameStoreFactory | None = None,
         config: Config | None = None,
     ) -> None:
         self.repo_root = repo_root
@@ -80,6 +82,7 @@ class SessionManager:
             lambda server_url, timeout: DiffusionClient(server_url, timeout)
         )
         self.finalizer_factory = finalizer_factory
+        self.frame_store_factory = frame_store_factory or FrameStore
         self._lock = threading.Lock()
         self._thread: threading.Thread | None = None
         self._stop_event: threading.Event | None = None
@@ -89,6 +92,10 @@ class SessionManager:
         self._logs = ProcessLogStore(max_log_lines)
         self._manifest_path: str | None = None
         self._mock_source: MockEEGSource | None = None
+        self._phase = "idle"
+        self._result_ready = False
+        self._result_refined = False
+        self._finalize_error: str | None = None
 
     def start(self, request: StartSessionRequest) -> dict[str, Any]:
         prompt = (request.prompt or "").strip()
@@ -107,8 +114,9 @@ class SessionManager:
         client = self.diffusion_client_factory(request.server_url, 30.0)
         remote_manifest = self._load_remote_manifest(client)
         self._validate_remote_manifest(manifest, remote_manifest)
-        frame_store = FrameStore()
+        frame_store = self.frame_store_factory()
         frame_store.clear_target()
+        frame_store.clear_live()
         loop = OptimizerRenderLoop(
             self.config,
             frames_per_step=6,
@@ -132,6 +140,10 @@ class SessionManager:
             self._prompt = prompt
             self._last_exit_code = None
             self._manifest_path = str(manifest_path)
+            self._phase = "running"
+            self._result_ready = False
+            self._result_refined = False
+            self._finalize_error = None
             self._logs.append(f"[api] manifest: {manifest_path}")
             self._logs.append(f"[api] render server: {request.server_url}")
             thread.start()
@@ -142,9 +154,10 @@ class SessionManager:
             self._refresh_locked()
             thread = self._thread
             stop_event = self._stop_event
-            if thread is None or stop_event is None:
+            if thread is None:
                 return self._status_locked()
-            stop_event.set()
+            if stop_event is not None:
+                stop_event.set()
 
         thread.join(timeout=5)
         with self._lock:
@@ -157,6 +170,40 @@ class SessionManager:
     def status(self) -> dict[str, Any]:
         with self._lock:
             self._refresh_locked()
+            return self._status_locked()
+
+    def retry_finalization(self) -> dict[str, Any]:
+        with self._lock:
+            self._refresh_locked()
+            if self._thread is not None:
+                raise HTTPException(status_code=409, detail="session operation already running")
+            if not self._prompt:
+                raise HTTPException(status_code=409, detail="no completed session to refine")
+
+        frame_store = self.frame_store_factory()
+        raw_path = frame_store.directory / "session_end.png"
+        if not raw_path.exists():
+            raise HTTPException(status_code=404, detail="session_end.png not found")
+        finalizer = self._make_finalizer()
+        if finalizer is None:
+            raise HTTPException(status_code=503, detail="OpenAI image refinement is unavailable")
+
+        thread = threading.Thread(
+            target=self._retry_finalization,
+            args=(frame_store, finalizer, raw_path.read_bytes(), self._prompt),
+            name="neurim-finalization-retry",
+            daemon=True,
+        )
+        with self._lock:
+            self._phase = "finalizing"
+            self._result_ready = False
+            self._result_refined = False
+            self._finalize_error = None
+            self._last_exit_code = None
+            self._thread = thread
+            self._stop_event = None
+            self._logs.append("[api] retrying OpenAI image refinement")
+            thread.start()
             return self._status_locked()
 
     def logs(self, lines: int) -> dict[str, Any]:
@@ -271,16 +318,56 @@ class SessionManager:
                     break
                 if mock:
                     time.sleep(max(0.0, self.config.faa.update_interval_s))
-            loop.save_final_frame()
+            with self._lock:
+                self._phase = "finalizing"
+            refined, finalize_error = loop.save_final_frame()
+            with self._lock:
+                self._result_ready = True
+                self._result_refined = refined
+                self._finalize_error = finalize_error
+                self._phase = "completed"
+                if refined:
+                    self._logs.append("[api] OpenAI-refined final image ready")
+                else:
+                    self._logs.append(f"[api] raw final image ready; refinement failed: {finalize_error}")
         except Exception as exc:  # noqa: BLE001
             exit_code = 1
             self._append_log(f"[api] session error: {exc}")
+            with self._lock:
+                self._phase = "failed"
+                self._finalize_error = str(exc)
         finally:
             with self._lock:
                 self._last_exit_code = exit_code
                 if self._thread is threading.current_thread():
                     self._thread = None
                     self._stop_event = None
+
+    def _retry_finalization(self, frame_store: FrameStore, finalizer, png: bytes, prompt: str) -> None:
+        exit_code = 0
+        try:
+            finalized = finalizer.finalize(png, prompt)
+            frame_store.save_target(finalized)
+            with self._lock:
+                self._result_ready = True
+                self._result_refined = True
+                self._finalize_error = None
+                self._phase = "completed"
+                self._logs.append("[api] OpenAI-refined final image ready")
+        except Exception as exc:  # noqa: BLE001
+            exit_code = 1
+            frame_store.save_target(png)
+            with self._lock:
+                self._result_ready = True
+                self._result_refined = False
+                self._finalize_error = str(exc)
+                self._phase = "completed"
+                self._logs.append(f"[api] image refinement retry failed: {exc}")
+        finally:
+            with self._lock:
+                self._last_exit_code = exit_code
+                if self._thread is threading.current_thread():
+                    self._thread = None
 
     def _append_log(self, line: str) -> None:
         with self._lock:
@@ -302,4 +389,8 @@ class SessionManager:
             "prompt": self._prompt,
             "exit_code": self._last_exit_code if thread is None else None,
             "manifest_path": self._manifest_path,
+            "phase": self._phase,
+            "result_ready": self._result_ready,
+            "result_refined": self._result_refined,
+            "finalize_error": self._finalize_error,
         }

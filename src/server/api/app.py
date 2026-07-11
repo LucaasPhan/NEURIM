@@ -65,6 +65,10 @@ def create_app(
     def stop_session() -> dict[str, Any]:
         return manager.stop()
 
+    @application.post("/session/finalize/retry")
+    def retry_session_finalization() -> dict[str, Any]:
+        return manager.retry_finalization()
+
     @application.get("/session/status")
     def session_status() -> dict[str, Any]:
         return manager.status()

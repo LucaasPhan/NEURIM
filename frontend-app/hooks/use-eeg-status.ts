@@ -9,6 +9,8 @@ export interface EegStatusHook {
   status: EegStatus | null;
   // false when the Next proxy / api_server.py cannot be reached (backend down).
   reachable: boolean;
+  // proxy/backend error text when no valid EEG status payload is available.
+  error: string | null;
   // true until the first status check resolves.
   loading: boolean;
   // true while a manual retry request is in flight.
@@ -35,6 +37,7 @@ function isEegStatus(value: unknown): value is EegStatus {
 export function useEegStatus(): EegStatusHook {
   const [status, setStatus] = useState<EegStatus | null>(null);
   const [reachable, setReachable] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [retrying, setRetrying] = useState(false);
   const mounted = useRef(true);
@@ -47,12 +50,22 @@ export function useEegStatus(): EegStatusHook {
       if (res.ok && isEegStatus(json)) {
         setStatus(json);
         setReachable(true);
+        setError(null);
       } else {
         // Proxy answered but api_server.py is unreachable (502) or malformed.
+        const message =
+          typeof (json as { error?: unknown } | null)?.error === "string"
+            ? String((json as { error: string }).error)
+            : `EEG status request failed with HTTP ${res.status}`;
         setReachable(false);
+        setError(message);
       }
-    } catch {
-      if (mounted.current) setReachable(false);
+    } catch (pollError) {
+      if (mounted.current) {
+        const message = pollError instanceof Error ? pollError.message : String(pollError);
+        setReachable(false);
+        setError(message);
+      }
     } finally {
       if (mounted.current) setLoading(false);
     }
@@ -67,14 +80,28 @@ export function useEegStatus(): EegStatusHook {
     );
     try {
       const res = await fetch("/api/eeg-retry", { method: "POST", cache: "no-store" });
+      const json = await res.json().catch(() => null);
       if (!mounted.current) return;
-      setReachable(res.ok || res.status !== 502);
-    } catch {
-      if (mounted.current) setReachable(false);
+      if (res.ok && isEegStatus(json)) {
+        setStatus(json);
+        setReachable(true);
+        setError(null);
+      } else {
+        const message =
+          typeof (json as { error?: unknown } | null)?.error === "string"
+            ? String((json as { error: string }).error)
+            : `EEG retry request failed with HTTP ${res.status}`;
+        setReachable(false);
+        setError(message);
+      }
+    } catch (retryError) {
+      if (mounted.current) {
+        const message = retryError instanceof Error ? retryError.message : String(retryError);
+        setReachable(false);
+        setError(message);
+      }
     } finally {
       if (mounted.current) setRetrying(false);
-      // Truth resumes from the regular poll; don't adopt the retry response's
-      // transient "disconnected" reset here.
     }
   }, []);
 
@@ -91,5 +118,5 @@ export function useEegStatus(): EegStatusHook {
     };
   }, [poll]);
 
-  return { status, reachable, loading, retrying, retry };
+  return { status, reachable, error, loading, retrying, retry };
 }

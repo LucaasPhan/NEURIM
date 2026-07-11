@@ -195,7 +195,7 @@ function DisconnectedView({
   const isError = status?.state === "error";
 
   const subtitle = !reachable
-    ? "Can't reach the local api_server.py. Start it, then retry."
+    ? eeg.error ?? "Can't reach the local api_server.py. Start it, then retry."
     : status?.last_error
       ? status.last_error
       : "Put on the EPOC X headset and make sure Cortex is running, then retry.";
