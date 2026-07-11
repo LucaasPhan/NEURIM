@@ -43,3 +43,4 @@ streamdiffusion_test/
 streamdiffusion_test_/
 mock_stream/
 graphify-out/cache/*
+.codex/
