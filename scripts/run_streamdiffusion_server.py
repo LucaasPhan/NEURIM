@@ -172,9 +172,19 @@ def make_handler(render_server: StreamDiffusionRenderServer):
     return Handler
 
 
-def build_wrapper(config, streamdiffusion_repo, model_id, t_index_list, acceleration, seed, frame_size):
+def build_wrapper(config, streamdiffusion_repo, model_id, t_index_list, acceleration, seed, frame_size,
+                  cfg_type: str = "none", guidance_scale: float = 1.0):
     """Construct + prepare a StreamDiffusionWrapper. Shared by the server and
     scripts/test_streamdiffusion.py so the diagnostic exercises the exact setup.
+
+    cfg_type/guidance_scale default to Turbo-appropriate values (no CFG needed,
+    since Turbo/LCM checkpoints are distilled specifically to skip it). A plain
+    (non-turbo) SD checkpoint - e.g. runwayml/stable-diffusion-v1-5 or
+    stabilityai/stable-diffusion-2-1-base - needs real guidance and more steps:
+    pass cfg_type="self" (or "full") and guidance_scale ~7-8, plus a longer
+    --t-index-list (more entries spread across the schedule, not just 2) -
+    see run_streamdiffusion_server.py's --model-id/--cfg-type/--guidance-scale
+    docstring example.
     """
     repo_path = str(Path(streamdiffusion_repo).resolve())
     if not (Path(repo_path) / "utils" / "wrapper.py").exists():
@@ -186,7 +196,7 @@ def build_wrapper(config, streamdiffusion_repo, model_id, t_index_list, accelera
     from utils.wrapper import StreamDiffusionWrapper  # only importable with repo_path on sys.path
 
     print(f"[streamdiffusion-server] loading {model_id} (t_index_list={t_index_list}, "
-          f"acceleration={acceleration})...")
+          f"acceleration={acceleration}, cfg_type={cfg_type}, guidance_scale={guidance_scale})...")
     wrapper = StreamDiffusionWrapper(
         model_id_or_path=model_id,
         t_index_list=t_index_list,
@@ -198,17 +208,17 @@ def build_wrapper(config, streamdiffusion_repo, model_id, t_index_list, accelera
         width=frame_size,
         height=frame_size,
         acceleration=acceleration,
-        use_lcm_lora=False,   # this is a true SD-Turbo run, not LCM-LoRA-on-SD1.5
+        use_lcm_lora=False,   # only relevant for the SD1.5+LCM-LoRA combo, not used here
         use_tiny_vae=True,
         use_denoising_batch=True,
-        cfg_type="none",      # avoids uncond-embeds concatenation, since we inject
-                               # prompt_embeds directly rather than via update_prompt()
+        cfg_type=cfg_type,     # "none" avoids uncond-embeds concatenation - correct for
+                               # Turbo/LCM (no CFG needed); use "self"/"full" for standard SD
         seed=seed,
     )
     # Any placeholder prompt works here - prepare() just initializes internal state
     # (batch_size, schedules); real conditioning comes from overwriting prompt_embeds.
     wrapper.prepare(prompt=config.generator.anchor_prompts[0] if config.generator.anchor_prompts else "a photo",
-                     guidance_scale=1.0)
+                     guidance_scale=guidance_scale)
     return wrapper
 
 
@@ -245,9 +255,20 @@ def main() -> None:
                          help="path to a cloned cumulo-autumn/StreamDiffusion checkout - StreamDiffusionWrapper "
                               "lives in utils/wrapper.py at the repo root, which setup.py does NOT package, so "
                               "'pip install streamdiffusion' alone does not make it importable")
-    parser.add_argument("--model-id", default="stabilityai/sd-turbo")
-    parser.add_argument("--t-index-list", default="0,16", help="comma-separated denoising step indices")
+    parser.add_argument("--model-id", default="stabilityai/sd-turbo",
+                         help="e.g. stabilityai/sd-turbo (default), or a plain SD checkpoint like "
+                              "runwayml/stable-diffusion-v1-5 / stabilityai/stable-diffusion-2-1-base - "
+                              "pair a non-turbo model with --cfg-type self --guidance-scale 7.5 and a "
+                              "longer --t-index-list")
+    parser.add_argument("--t-index-list", default="0,16", help="comma-separated denoising step indices - "
+                         "2 entries is right for Turbo's compressed schedule; a plain SD checkpoint wants "
+                         "more, e.g. --t-index-list 0,8,16,24,32,40")
     parser.add_argument("--acceleration", default="xformers", choices=["none", "xformers", "tensorrt"])
+    parser.add_argument("--cfg-type", default="none", choices=["none", "full", "self", "initialize"],
+                         help="'none' (default) for Turbo/LCM - no CFG needed. 'self' or 'full' for a "
+                              "plain (non-turbo) SD checkpoint, which needs real classifier-free guidance.")
+    parser.add_argument("--guidance-scale", type=float, default=1.0,
+                         help="1.0 (default, no-op) for Turbo/LCM. ~7-8 for a plain SD checkpoint.")
     parser.add_argument("--seed", type=int, default=None, help="defaults to config.generator.remote_diffusion_seed")
     args = parser.parse_args()
 
@@ -257,7 +278,8 @@ def main() -> None:
     frame_size = config.generator.frame_size
 
     wrapper = build_wrapper(config, args.streamdiffusion_repo, args.model_id, t_index_list,
-                            args.acceleration, seed, frame_size)
+                            args.acceleration, seed, frame_size,
+                            cfg_type=args.cfg_type, guidance_scale=args.guidance_scale)
     projector, embed_shape = _fit_projector(wrapper, config.generator.anchor_prompts, config.optimizer.search_dims)
     render_server = StreamDiffusionRenderServer(wrapper, projector, embed_shape, frame_size, config.optimizer.search_dims)
     render_server.anchor_prompts = list(config.generator.anchor_prompts)
