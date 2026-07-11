@@ -23,6 +23,22 @@ eeg:
     - AF4
   sample_rate_hz: 128
 
+# Streaming signal conditioning (src/signal_service/preprocessing.py), applied
+# before band power / FAA. Without this the raw frontal channels are dominated
+# by blink (EOG) and forehead (EMG) activity. notch_hz is the mains frequency
+# (60 in North America, 50 elsewhere).
+preprocessing:
+  enabled: true
+  bandpass_low_hz: 1.0
+  bandpass_high_hz: 40.0
+  notch_hz: 60.0
+  notch_q: 30.0
+  filter_order: 4
+  common_average: true
+  eog_channels: ["AF3", "AF4", "F7", "F8"]
+  blink_threshold_mad: 5.0
+  emg_threshold_mad: 6.0
+
 # Frontal alpha asymmetry: the entire reward signal, r(t).
 # FAA = fixed-weight ln(power_right) - ln(power_left) across frontal mirror
 # pairs, z-scored against the session baseline.
