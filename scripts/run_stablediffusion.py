@@ -163,9 +163,12 @@ class BreedMorphRenderServer:
         guidance_scale: float,
         softmax_temperature: float,
         log_weights_every: int,
+        target_breed: str | None,
     ):
         self.pipe = pipe
         self.breeds = breeds
+        self.target_breed = target_breed
+        self.target_index = breeds.index(target_breed) if target_breed is not None else None
         self.breed_embeds = breed_embeds
         self.breed_latents = breed_latents
         self.frame_size = frame_size
@@ -196,7 +199,13 @@ class BreedMorphRenderServer:
             weights = softmax_weights(z, temperature=self.softmax_temperature)
             self._render_count += 1
             if self.log_weights_every and self._render_count % self.log_weights_every == 0:
-                print(f"[breed-morph-server] render={self._render_count} top={top_breeds(self.breeds, weights)}")
+                target = ""
+                if self.target_index is not None and self.target_breed is not None:
+                    target = f" target={self.target_breed} {weights[self.target_index]:.2f}"
+                print(
+                    f"[breed-morph-server] render={self._render_count} "
+                    f"top={top_breeds(self.breeds, weights)}{target}"
+                )
             prompt_embeds = blend_prompt_embeds(self.breed_embeds, weights)
             latents = blend_noise_latents(self.breed_latents, weights)
             with torch.inference_mode():
@@ -298,6 +307,9 @@ def main() -> None:
     parser.add_argument("--breeds", nargs="+", default=DEFAULT_BREEDS,
                         help="breed list - REPLACES config.yaml anchor_prompts entirely. "
                              "config.optimizer.search_dims MUST equal len(breeds).")
+    parser.add_argument("--target-breed", default="Dalmatian",
+                        help="optional diagnostic label. Must be one of --breeds; logs its current "
+                             "softmax weight but does not steer real EEG optimization.")
     parser.add_argument("--prompt-template", default=PROMPT_TEMPLATE,
                         help="template with a single {breed} placeholder, applied to each --breeds value")
     parser.add_argument("--size", type=int, default=None,
@@ -320,6 +332,10 @@ def main() -> None:
         sys.exit("[breed-morph-server] --prompt-template must contain a literal {breed} placeholder")
     if len(args.breeds) < 2:
         sys.exit("[breed-morph-server] provide at least two --breeds")
+    if args.target_breed is not None and args.target_breed not in args.breeds:
+        sys.exit(
+            f"[breed-morph-server] --target-breed must be one of --breeds; got {args.target_breed!r}"
+        )
 
     config = Config.load()
     seed = args.seed if args.seed is not None else config.generator.remote_diffusion_seed
@@ -349,7 +365,8 @@ def main() -> None:
 
     render_server = BreedMorphRenderServer(
         pipe, list(args.breeds), breed_embeds, breed_latents, frame_size,
-        device, dtype, args.steps, args.guidance_scale, args.temperature, args.log_weights_every,
+        device, dtype, args.steps, args.guidance_scale, args.temperature,
+        args.log_weights_every, args.target_breed,
     )
 
     server = ThreadingHTTPServer((args.host, args.port), make_handler(render_server))
@@ -358,6 +375,8 @@ def main() -> None:
           f"steps={args.steps}, guidance_scale={args.guidance_scale}, "
           f"temperature={args.temperature})")
     print(f"[breed-morph-server] breeds: {', '.join(args.breeds)}")
+    if args.target_breed is not None:
+        print(f"[breed-morph-server] target breed diagnostic: {args.target_breed}")
     server.serve_forever()
 
 
