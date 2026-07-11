@@ -75,7 +75,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--frames-per-transition",
         type=int,
-        default=16,
+        default=32,
         help="Number of generated frames between consecutive breeds.",
     )
     parser.add_argument(
