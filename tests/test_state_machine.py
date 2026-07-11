@@ -51,12 +51,46 @@ def test_min_steps_before_settle_prevents_immediate_lock():
 
 
 def test_recover_after_negative_streak():
-    sm = _sm(recover_negative_streak=3)
+    # RECOVER counts only rewards clearly below the margin (-0.25), so a
+    # sustained clearly-bad stretch must still trip it.
+    sm = _sm(recover_negative_streak=3, recover_reward_margin=-0.25)
     sm.mark_calibrated()
-    sm.observe(reward=-0.2, step_norm=0.2)
-    sm.observe(reward=-0.3, step_norm=0.2)
-    state = sm.observe(reward=-0.4, step_norm=0.2)
+    sm.observe(reward=-0.4, step_norm=0.2)
+    sm.observe(reward=-0.5, step_norm=0.2)
+    state = sm.observe(reward=-0.6, step_norm=0.2)
     assert state == "recover"
+
+
+def test_recover_ignores_small_negatives_above_margin():
+    # Realistic FAA baseline: a high-variance z-score swinging around 0, dipping
+    # below 0 by chance but never past the margin. The old `reward < 0` test
+    # yanked the search back and widened it constantly here; the margin must not.
+    # (High variance also means it is not a plateau, so stagnation stays quiet.)
+    sm = _sm(recover_negative_streak=4, recover_reward_margin=-0.25)
+    sm.mark_calibrated()
+    noisy_baseline = [-0.2, 0.24, -0.15, 0.22, -0.2, 0.2, -0.1, 0.24, -0.18, 0.21]
+    for r in noisy_baseline:
+        state = sm.observe(reward=r, step_norm=0.2)
+        assert state != "recover"
+    assert sm.negative_streak == 0
+
+
+def test_stagnation_escapes_a_mediocre_low_variance_plateau():
+    # A flat plateau that is too low to SETTLE means the search has stalled.
+    # Stagnation kicks it back to RECOVER (revert + widen) even though no reward
+    # is below the RECOVER margin - this is what lets convergence not depend on
+    # the reward being absolutely bad.
+    sm = _sm(
+        settle_reward_threshold=0.60,
+        settle_reward_std_threshold=0.15,
+        recover_reward_margin=-0.25,
+        stagnation_patience_steps=4,
+    )
+    sm.mark_calibrated()
+    states = [sm.observe(reward=0.2, step_norm=0.2) for _ in range(8)]
+    # 0.2 is above the RECOVER margin, so the negative streak never built - the
+    # escape came purely from the plateau being stuck below the SETTLE bar.
+    assert "recover" in states
 
 
 def test_recover_returns_to_explore_next_step():
@@ -65,6 +99,58 @@ def test_recover_returns_to_explore_next_step():
     sm.observe(reward=-0.5, step_norm=0.2)
     assert sm.observe(reward=-0.5, step_norm=0.2) == "recover"
     assert sm.observe(reward=0.1, step_norm=0.2) == "explore"
+
+
+def test_settle_needs_low_variance_plateau():
+    # High recent average is not enough: while the reward is still jumpy the
+    # plateau gate (recent std) blocks SETTLE. Only once it flattens does it lock.
+    sm = _sm(
+        settle_reward_threshold=0.30,
+        settle_reward_std_threshold=0.15,
+        settle_motion_threshold=0.1,
+        settle_patience_steps=3,
+        min_steps_before_settle=0,
+    )
+    sm.mark_calibrated()
+    for _ in range(6):
+        for r in (0.9, 0.1):  # high average, high variance
+            sm.observe(reward=r, step_norm=0.01)
+    assert not sm.is_locked()
+
+    for _ in range(10):  # flattens out -> variance collapses -> plateau holds
+        sm.observe(reward=0.5, step_norm=0.01)
+    assert sm.is_locked()
+    assert sm.state == "settle"
+
+
+def test_settle_fires_at_modest_plateau_below_old_threshold():
+    # A steady 0.4 plateau is realistic FAA modulation. The old 0.55 threshold
+    # never locked on it (it just drifted); the 0.30 threshold does.
+    sm = _sm(
+        settle_reward_threshold=0.30,
+        settle_reward_std_threshold=0.15,
+        settle_motion_threshold=0.1,
+        settle_patience_steps=3,
+        min_steps_before_settle=0,
+    )
+    sm.mark_calibrated()
+    for _ in range(6):
+        sm.observe(reward=0.4, step_norm=0.01)
+    assert sm.is_locked()
+    assert sm.state == "settle"
+
+    # Sanity: the same plateau would not have reached the old 0.55 threshold.
+    old = _sm(
+        settle_reward_threshold=0.55,
+        settle_reward_std_threshold=0.15,
+        settle_motion_threshold=0.1,
+        settle_patience_steps=3,
+        min_steps_before_settle=0,
+    )
+    old.mark_calibrated()
+    for _ in range(6):
+        old.observe(reward=0.4, step_norm=0.01)
+    assert not old.is_locked()
 
 
 def test_step_size_shrinks_from_explore_to_refine():

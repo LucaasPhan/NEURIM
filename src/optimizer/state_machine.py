@@ -28,6 +28,7 @@ class StateMachine:
     reward_history: deque[float] = field(default_factory=lambda: deque(maxlen=20))
     negative_streak: int = 0
     settle_streak: int = 0
+    stagnation_streak: int = 0
     blacklist: list[np.ndarray] = field(default_factory=list)
 
     def mark_calibrated(self) -> None:
@@ -40,6 +41,12 @@ class StateMachine:
         recent = list(self.reward_history)[-n:]
         return float(np.mean(recent))
 
+    def _recent_std(self, n: int = 5) -> float:
+        if len(self.reward_history) < 2:
+            return float("inf")  # not enough data to call it a plateau
+        recent = list(self.reward_history)[-n:]
+        return float(np.std(recent))
+
     def observe(self, reward: float, step_norm: float) -> State:
         """Call once per optimizer step with the accepted/estimated reward and
         the norm of the last accepted step. Returns the (possibly new) state.
@@ -50,7 +57,10 @@ class StateMachine:
         if self.state == "calibrate":
             return self.state
 
-        if reward < 0:
+        # FAA reward is a baseline z-score centered near 0, so a plain reward<0
+        # test fires RECOVER on ordinary noise. Only count a clearly-bad reward
+        # (below a negative margin) toward the streak.
+        if reward < self.sm_config.recover_reward_margin:
             self.negative_streak += 1
         else:
             self.negative_streak = 0
@@ -63,10 +73,21 @@ class StateMachine:
             # One recovery step taken (widen + revert handled by caller); go
             # back to exploring from the restored checkpoint.
             self.negative_streak = 0
+            self.stagnation_streak = 0
             self.state = "explore"
             return self.state
 
-        if reward >= self.sm_config.settle_reward_threshold and step_norm < self.sm_config.settle_motion_threshold:
+        # SETTLE on a plateau (recent average high enough AND low variance),
+        # not on an instantaneous high reading - a clipped z-score rarely holds
+        # a high instantaneous value for several steps, so the old check never
+        # locked and just drifted.
+        recent_avg = self._recent_average()
+        plateau = self._recent_std() < self.sm_config.settle_reward_std_threshold
+        if (
+            recent_avg >= self.sm_config.settle_reward_threshold
+            and plateau
+            and step_norm < self.sm_config.settle_motion_threshold
+        ):
             self.settle_streak += 1
         else:
             self.settle_streak = 0
@@ -74,6 +95,25 @@ class StateMachine:
         can_settle = self.step_index >= self.sm_config.min_steps_before_settle
         if can_settle and self.settle_streak >= self.sm_config.settle_patience_steps:
             self.state = "settle"
+            return self.state
+
+        # Stagnation escape. A low-variance plateau that is too low to SETTLE
+        # means the search has stalled at a mediocre point (e.g. a cold start
+        # where the whole neighborhood of the origin scores below baseline).
+        # Kick it like RECOVER - revert to the best point and widen - so
+        # convergence does not depend on the reward being absolutely bad. A
+        # high-variance signal (FAA baseline noise) is not a plateau, so this
+        # never fires there; only a genuine stall does.
+        stagnated = plateau and recent_avg < self.sm_config.settle_reward_threshold
+        if stagnated:
+            self.stagnation_streak += 1
+        else:
+            self.stagnation_streak = 0
+
+        if self.stagnation_streak >= self.sm_config.stagnation_patience_steps:
+            self.stagnation_streak = 0
+            self.settle_streak = 0
+            self.state = "recover"
             return self.state
 
         avg_recent = self._recent_average()

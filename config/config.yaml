@@ -56,18 +56,26 @@ optimizer:
   step_momentum: 0.6
   noise_threshold: 0.05     # reward diffs smaller than this are EEG jitter
   reward_window_steps: 4    # ~1s of FAA readings averaged per accept/reject
-  bounds: 3.0
+  bounds: 1.5               # was 3.0; z is in anchor-bank std units (PCA whitens
+                            # per axis), so +/-1.5 still reaches every anchor
+                            # while cutting the box corner from ~8.5 to ~4.2 std,
+                            # out of the incoherent-embedding zone. Sweep 1.2-2.0.
   algorithm: "hill_climb"   # "hill_climb" | "es_1p1" | "gp_bo"
 
 # CALIBRATE -> EXPLORE -> REFINE -> SETTLE, with RECOVER as an escape hatch.
 state_machine:
   calibrate_duration_s: 30.0
-  settle_reward_threshold: 0.55
+  settle_reward_threshold: 0.30       # was 0.55 - realistic plateau for a clipped FAA z-score
+  settle_reward_std_threshold: 0.15   # plateau tightness: SETTLE needs recent reward std below this
   settle_motion_threshold: 0.1
   settle_patience_steps: 3
   min_steps_before_settle: 20
   recover_negative_streak: 4
+  recover_reward_margin: -0.25        # RECOVER counts only clearly-bad rewards, not ordinary z-score dips
   recover_widen_factor: 1.5
+  stagnation_patience_steps: 6        # escape a mediocre low-variance plateau (revert+widen) so
+                                      # convergence doesn't depend on absolute-reward RECOVER
+
   max_steps: 100             # convergence expected in 10-30 steps for a
                              # cooperative real signal; noisy/adversarial
                              # cases can take longer - see README.md
@@ -102,17 +110,16 @@ generator:
   # enough to crossfade smoothly. ~10 prompts fully span the 8-dim search space
   # (PCA yields up to n_prompts-1 meaningful directions after centering).
   anchor_prompts:
-    - "cat"
-    # - "a close portrait photo of a fluffy golden-brown puppy sitting on soft white bedding, floppy ears, black button nose, glossy dark eyes, gentle expression, soft diffused daylight, shallow depth of field"
-    # - "a close portrait photo of a pale cream puppy sitting on soft white bedding, floppy ears, black button nose, glossy dark eyes, gentle expression, soft diffused daylight, shallow depth of field"
-    # - "a close portrait photo of a chocolate-brown puppy sitting on soft white bedding, floppy ears, black button nose, glossy dark eyes, gentle expression, soft diffused daylight, shallow depth of field"
-    # - "a close portrait photo of a soft grey puppy sitting on soft white bedding, floppy ears, black button nose, glossy dark eyes, gentle expression, soft diffused daylight, shallow depth of field"
-    # - "a close portrait photo of a black and white puppy sitting on soft white bedding, floppy ears, black button nose, glossy dark eyes, gentle expression, soft diffused daylight, shallow depth of field"
-    # - "a close portrait photo of a fluffy golden puppy sitting on soft white bedding, small pointed ears, black button nose, glossy dark eyes, gentle expression, soft diffused daylight, shallow depth of field"
-    # - "a close portrait photo of a fluffy golden puppy sitting on soft white bedding, floppy ears, wearing a coral-orange collar, black button nose, glossy dark eyes, gentle expression, soft diffused daylight, shallow depth of field"
-    # - "a close portrait photo of a fluffy golden puppy sitting on soft white bedding, floppy ears, wearing a soft blue collar, black button nose, glossy dark eyes, gentle expression, soft diffused daylight, shallow depth of field"
-    # - "a close portrait photo of a fluffy golden puppy on soft white bedding with a slight curious head tilt, floppy ears, black button nose, glossy dark eyes, alert happy expression, soft diffused daylight, shallow depth of field"
-    # - "a close portrait photo of a fluffy golden puppy lying relaxed on soft white bedding, floppy ears, black button nose, glossy dark eyes, sleepy calm expression, soft diffused daylight, shallow depth of field"
+    - "a close portrait photo of a fluffy golden-brown puppy sitting on soft white bedding, floppy ears, black button nose, glossy dark eyes, gentle expression, soft diffused daylight, shallow depth of field"
+    - "a close portrait photo of a pale cream puppy sitting on soft white bedding, floppy ears, black button nose, glossy dark eyes, gentle expression, soft diffused daylight, shallow depth of field"
+    - "a close portrait photo of a chocolate-brown puppy sitting on soft white bedding, floppy ears, black button nose, glossy dark eyes, gentle expression, soft diffused daylight, shallow depth of field"
+    - "a close portrait photo of a soft grey puppy sitting on soft white bedding, floppy ears, black button nose, glossy dark eyes, gentle expression, soft diffused daylight, shallow depth of field"
+    - "a close portrait photo of a black and white puppy sitting on soft white bedding, floppy ears, black button nose, glossy dark eyes, gentle expression, soft diffused daylight, shallow depth of field"
+    - "a close portrait photo of a fluffy golden puppy sitting on soft white bedding, small pointed ears, black button nose, glossy dark eyes, gentle expression, soft diffused daylight, shallow depth of field"
+    - "a close portrait photo of a fluffy golden puppy sitting on soft white bedding, floppy ears, wearing a coral-orange collar, black button nose, glossy dark eyes, gentle expression, soft diffused daylight, shallow depth of field"
+    - "a close portrait photo of a fluffy golden puppy sitting on soft white bedding, floppy ears, wearing a soft blue collar, black button nose, glossy dark eyes, gentle expression, soft diffused daylight, shallow depth of field"
+    - "a close portrait photo of a fluffy golden puppy on soft white bedding with a slight curious head tilt, floppy ears, black button nose, glossy dark eyes, alert happy expression, soft diffused daylight, shallow depth of field"
+    - "a close portrait photo of a fluffy golden puppy lying relaxed on soft white bedding, floppy ears, black button nose, glossy dark eyes, sleepy calm expression, soft diffused daylight, shallow depth of field"
 
 
 loop:
