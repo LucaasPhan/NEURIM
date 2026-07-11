@@ -59,7 +59,7 @@ export function useSession(): NeurimSession {
   const [liveReward, setLiveReward] = useState(0);
   const finalUrlRef = useRef<string | null>(null);
   const { src: liveSrc, available: liveAvailable, reset: resetLive } = usePngFrame(
-    active && !offline && backendPhase !== "completed",
+    active && !offline && !isSubmitting && Boolean(sessionId) && backendPhase !== "completed",
   );
 
   const revokeFinal = useCallback(() => {
@@ -130,7 +130,11 @@ export function useSession(): NeurimSession {
 
     setIsSubmitting(true);
     setActive(true);
+    setSubmittedPrompt(prompt);
+    setSessionId(null);
     setOffline(false);
+    setOfflineFrame(null);
+    setOfflineSrc(null);
     setBackendPhase("running");
     setFinalSrc(null);
     setResultRefined(false);
@@ -144,14 +148,13 @@ export function useSession(): NeurimSession {
       const response = await fetch("/api/session-intent", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify({ prompt, replace: true }),
       });
       const json = await response.json().catch(() => ({}));
       if (!response.ok) {
         throw new SessionStartError(json.error || "Failed to start session", response.status);
       }
       const intent = json as SessionIntentResponse;
-      setSubmittedPrompt(intent.prompt || prompt);
       setSessionId(intent.session_id);
       setBackendPhase(intent.backend_session.phase || "running");
       setStatusText("Session running");
@@ -209,6 +212,14 @@ export function useSession(): NeurimSession {
     setIsRetryingFinalization(false);
     setLiveReward(0);
   }, [resetLive, revokeFinal]);
+
+  useEffect(() => {
+    const resetRestoredPage = (event: PageTransitionEvent) => {
+      if (event.persisted) reset();
+    };
+    window.addEventListener("pageshow", resetRestoredPage);
+    return () => window.removeEventListener("pageshow", resetRestoredPage);
+  }, [reset]);
 
   const completed = backendPhase === "completed" && Boolean(finalSrc);
   const phase: SessionPhase = !active

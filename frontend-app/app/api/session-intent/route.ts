@@ -8,6 +8,7 @@ type SessionIntentRequest = {
   mock?: unknown;
   baseline_seconds?: unknown;
   server_url?: unknown;
+  replace?: unknown;
 };
 
 type BackendSession = {
@@ -86,6 +87,23 @@ export async function POST(request: Request) {
   };
 
   try {
+    if (requestBoolean(body.replace, false)) {
+      const stopResponse = await fetch(`${apiBase}/session/stop`, {
+        method: "POST",
+        cache: "no-store",
+      });
+      if (!stopResponse.ok) {
+        const stopJson = (await stopResponse.json().catch(() => ({}))) as Record<string, unknown>;
+        return NextResponse.json(
+          {
+            error: backendError(stopJson, `Could not stop the previous session (HTTP ${stopResponse.status})`),
+            backend_url: apiBase,
+          },
+          { status: stopResponse.status },
+        );
+      }
+    }
+
     const response = await fetch(`${apiBase}/session/start`, {
       method: "POST",
       headers: { "content-type": "application/json" },
