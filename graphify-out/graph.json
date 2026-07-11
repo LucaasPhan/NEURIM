@@ -2260,7 +2260,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_run_calibration",
-      "community": 14,
+      "community": 0,
       "norm_label": "run_calibration.py"
     },
     {
@@ -2270,7 +2270,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "scripts_run_calibration_main",
-      "community": 14,
+      "community": 0,
       "norm_label": "main()"
     },
     {
@@ -2400,7 +2400,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "scripts_run_diffusion_server_diffusionrenderserver_init",
-      "community": 9,
+      "community": 10,
       "norm_label": ".__init__()"
     },
     {
@@ -2627,7 +2627,7 @@
       "label": "_softmax_weights()",
       "file_type": "code",
       "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L60",
+      "source_location": "L59",
       "_origin": "ast",
       "id": "scripts_run_mock_optimizer_softmax_weights",
       "community": 30,
@@ -2647,7 +2647,7 @@
       "label": "BreedTargetRewardSource",
       "file_type": "code",
       "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L67",
+      "source_location": "L66",
       "_origin": "ast",
       "id": "scripts_run_mock_optimizer_breedtargetrewardsource",
       "community": 30,
@@ -2657,7 +2657,7 @@
       "label": ".__init__()",
       "file_type": "code",
       "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L70",
+      "source_location": "L69",
       "_origin": "ast",
       "id": "scripts_run_mock_optimizer_breedtargetrewardsource_init",
       "community": 30,
@@ -2667,7 +2667,7 @@
       "label": ".read_reward()",
       "file_type": "code",
       "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L87",
+      "source_location": "L86",
       "_origin": "ast",
       "id": "scripts_run_mock_optimizer_breedtargetrewardsource_read_reward",
       "community": 30,
@@ -2677,57 +2677,17 @@
       "label": "_save_frame()",
       "file_type": "code",
       "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L107",
+      "source_location": "L106",
       "_origin": "ast",
       "id": "scripts_run_mock_optimizer_save_frame",
       "community": 30,
       "norm_label": "_save_frame()"
     },
     {
-      "label": "_SessionSnapshot",
-      "file_type": "code",
-      "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L113",
-      "_origin": "ast",
-      "id": "scripts_run_mock_optimizer_sessionsnapshot",
-      "community": 30,
-      "norm_label": "_sessionsnapshot"
-    },
-    {
-      "label": ".__init__()",
-      "file_type": "code",
-      "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L116",
-      "_origin": "ast",
-      "id": "scripts_run_mock_optimizer_sessionsnapshot_init",
-      "community": 30,
-      "norm_label": ".__init__()"
-    },
-    {
-      "label": ".on_frame()",
-      "file_type": "code",
-      "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L119",
-      "_origin": "ast",
-      "id": "scripts_run_mock_optimizer_sessionsnapshot_on_frame",
-      "community": 30,
-      "norm_label": ".on_frame()"
-    },
-    {
-      "label": ".save_end()",
-      "file_type": "code",
-      "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L125",
-      "_origin": "ast",
-      "id": "scripts_run_mock_optimizer_sessionsnapshot_save_end",
-      "community": 30,
-      "norm_label": ".save_end()"
-    },
-    {
       "label": "_post_render()",
       "file_type": "code",
       "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L129",
+      "source_location": "L112",
       "_origin": "ast",
       "id": "scripts_run_mock_optimizer_post_render",
       "community": 30,
@@ -2737,7 +2697,7 @@
       "label": "_post_anchors()",
       "file_type": "code",
       "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L142",
+      "source_location": "L125",
       "_origin": "ast",
       "id": "scripts_run_mock_optimizer_post_anchors",
       "community": 30,
@@ -2747,7 +2707,7 @@
       "label": "main()",
       "file_type": "code",
       "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L154",
+      "source_location": "L137",
       "_origin": "ast",
       "id": "scripts_run_mock_optimizer_main",
       "community": 30,
@@ -2757,21 +2717,11 @@
       "label": "Scripted reward for the breed-weight server: reward a selected breed.",
       "file_type": "rationale",
       "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L68",
+      "source_location": "L67",
       "_origin": "ast",
-      "id": "scripts_run_mock_optimizer_rationale_68",
+      "id": "scripts_run_mock_optimizer_rationale_67",
       "community": 30,
       "norm_label": "scripted reward for the breed-weight server: reward a selected breed."
-    },
-    {
-      "label": "Mirror the real EEG optimizer's live/start/end frame capture behavior.",
-      "file_type": "rationale",
-      "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L114",
-      "_origin": "ast",
-      "id": "scripts_run_mock_optimizer_rationale_114",
-      "community": 30,
-      "norm_label": "mirror the real eeg optimizer's live/start/end frame capture behavior."
     },
     {
       "label": "run_prompt_curation.py",
@@ -2800,7 +2750,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_run_real_eeg_optimizer",
-      "community": 14,
+      "community": 0,
       "norm_label": "run_real_eeg_optimizer.py"
     },
     {
@@ -2810,7 +2760,7 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "scripts_run_real_eeg_optimizer_save_frame",
-      "community": 14,
+      "community": 0,
       "norm_label": "_save_frame()"
     },
     {
@@ -2820,7 +2770,7 @@
       "source_location": "L58",
       "_origin": "ast",
       "id": "scripts_run_real_eeg_optimizer_sessionsnapshot",
-      "community": 14,
+      "community": 0,
       "norm_label": "_sessionsnapshot"
     },
     {
@@ -2830,7 +2780,7 @@
       "source_location": "L65",
       "_origin": "ast",
       "id": "scripts_run_real_eeg_optimizer_sessionsnapshot_init",
-      "community": 14,
+      "community": 0,
       "norm_label": ".__init__()"
     },
     {
@@ -2840,7 +2790,7 @@
       "source_location": "L68",
       "_origin": "ast",
       "id": "scripts_run_real_eeg_optimizer_sessionsnapshot_on_frame",
-      "community": 14,
+      "community": 0,
       "norm_label": ".on_frame()"
     },
     {
@@ -2850,7 +2800,7 @@
       "source_location": "L74",
       "_origin": "ast",
       "id": "scripts_run_real_eeg_optimizer_sessionsnapshot_save_end",
-      "community": 14,
+      "community": 0,
       "norm_label": ".save_end()"
     },
     {
@@ -2860,7 +2810,7 @@
       "source_location": "L78",
       "_origin": "ast",
       "id": "scripts_run_real_eeg_optimizer_post_render",
-      "community": 14,
+      "community": 0,
       "norm_label": "_post_render()"
     },
     {
@@ -2870,7 +2820,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "scripts_run_real_eeg_optimizer_py_ndarray",
-      "community": 14,
+      "community": 0,
       "norm_label": "ndarray"
     },
     {
@@ -2880,7 +2830,7 @@
       "source_location": "L91",
       "_origin": "ast",
       "id": "scripts_run_real_eeg_optimizer_post_anchors",
-      "community": 14,
+      "community": 0,
       "norm_label": "_post_anchors()"
     },
     {
@@ -2890,7 +2840,7 @@
       "source_location": "L103",
       "_origin": "ast",
       "id": "scripts_run_real_eeg_optimizer_cue",
-      "community": 14,
+      "community": 0,
       "norm_label": "_cue()"
     },
     {
@@ -2900,7 +2850,7 @@
       "source_location": "L111",
       "_origin": "ast",
       "id": "scripts_run_real_eeg_optimizer_main",
-      "community": 14,
+      "community": 0,
       "norm_label": "main()"
     },
     {
@@ -2910,7 +2860,7 @@
       "source_location": "L59",
       "_origin": "ast",
       "id": "scripts_run_real_eeg_optimizer_rationale_59",
-      "community": 14,
+      "community": 0,
       "norm_label": "same start/end capture as run_demo.py's _sessionsnapshot, for the     optional o"
     },
     {
@@ -3120,7 +3070,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_test_faa_stream",
-      "community": 14,
+      "community": 0,
       "norm_label": "test_faa_stream.py"
     },
     {
@@ -3130,7 +3080,7 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "scripts_test_faa_stream_pair_label",
-      "community": 14,
+      "community": 0,
       "norm_label": "_pair_label()"
     },
     {
@@ -3140,7 +3090,7 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "scripts_test_faa_stream_pair_value",
-      "community": 14,
+      "community": 0,
       "norm_label": "_pair_value()"
     },
     {
@@ -3150,7 +3100,7 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "scripts_test_faa_stream_cue_label",
-      "community": 14,
+      "community": 0,
       "norm_label": "_cue_label()"
     },
     {
@@ -3160,7 +3110,7 @@
       "source_location": "L56",
       "_origin": "ast",
       "id": "scripts_test_faa_stream_no_reward_reason",
-      "community": 14,
+      "community": 0,
       "norm_label": "_no_reward_reason()"
     },
     {
@@ -3170,7 +3120,7 @@
       "source_location": "L66",
       "_origin": "ast",
       "id": "scripts_test_faa_stream_main",
-      "community": 14,
+      "community": 0,
       "norm_label": "main()"
     },
     {
@@ -3200,7 +3150,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_common_config",
-      "community": 14,
+      "community": 34,
       "norm_label": "config.py"
     },
     {
@@ -3210,7 +3160,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_common_config_faaconfig",
-      "community": 14,
+      "community": 34,
       "norm_label": "faaconfig"
     },
     {
@@ -3220,7 +3170,7 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "src_common_config_eegconfig",
-      "community": 14,
+      "community": 34,
       "norm_label": "eegconfig"
     },
     {
@@ -3250,7 +3200,7 @@
       "source_location": "L89",
       "_origin": "ast",
       "id": "src_common_config_generatorconfig",
-      "community": 14,
+      "community": 34,
       "norm_label": "generatorconfig"
     },
     {
@@ -3260,7 +3210,7 @@
       "source_location": "L112",
       "_origin": "ast",
       "id": "src_common_config_loopconfig",
-      "community": 14,
+      "community": 34,
       "norm_label": "loopconfig"
     },
     {
@@ -3270,7 +3220,7 @@
       "source_location": "L118",
       "_origin": "ast",
       "id": "src_common_config_presentationconfig",
-      "community": 14,
+      "community": 34,
       "norm_label": "presentationconfig"
     },
     {
@@ -3280,7 +3230,7 @@
       "source_location": "L130",
       "_origin": "ast",
       "id": "src_common_config_config",
-      "community": 33,
+      "community": 22,
       "norm_label": "config"
     },
     {
@@ -3290,7 +3240,7 @@
       "source_location": "L140",
       "_origin": "ast",
       "id": "src_common_config_config_load",
-      "community": 14,
+      "community": 34,
       "norm_label": ".load()"
     },
     {
@@ -3300,7 +3250,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "src_common_config_py_path",
-      "community": 14,
+      "community": 34,
       "norm_label": "path"
     },
     {
@@ -3310,7 +3260,7 @@
       "source_location": "L158",
       "_origin": "ast",
       "id": "src_common_config_tuple_fields",
-      "community": 14,
+      "community": 34,
       "norm_label": "_tuple_fields()"
     },
     {
@@ -3320,7 +3270,7 @@
       "source_location": "L168",
       "_origin": "ast",
       "id": "src_common_config_emotiv_credentials",
-      "community": 14,
+      "community": 0,
       "norm_label": "emotiv_credentials()"
     },
     {
@@ -3330,7 +3280,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_common_config_rationale_1",
-      "community": 14,
+      "community": 34,
       "norm_label": "loads config/config.yaml into plain dataclasses.  secrets (emotiv_client_id/secr"
     },
     {
@@ -3340,7 +3290,7 @@
       "source_location": "L159",
       "_origin": "ast",
       "id": "src_common_config_rationale_159",
-      "community": 14,
+      "community": 34,
       "norm_label": "yaml lists need to become tuples for band_hz/clip fields."
     },
     {
@@ -3350,7 +3300,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_common_messages",
-      "community": 34,
+      "community": 52,
       "norm_label": "messages.py"
     },
     {
@@ -3360,7 +3310,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_common_messages_rewardmessage",
-      "community": 13,
+      "community": 52,
       "norm_label": "rewardmessage"
     },
     {
@@ -3370,7 +3320,7 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "src_common_messages_rewardmessage_to_json",
-      "community": 13,
+      "community": 52,
       "norm_label": ".to_json()"
     },
     {
@@ -3420,7 +3370,7 @@
       "source_location": "L55",
       "_origin": "ast",
       "id": "src_common_messages_framemessage",
-      "community": 34,
+      "community": 27,
       "norm_label": "framemessage"
     },
     {
@@ -3430,7 +3380,7 @@
       "source_location": "L72",
       "_origin": "ast",
       "id": "src_common_messages_framemessage_to_json",
-      "community": 34,
+      "community": 27,
       "norm_label": ".to_json()"
     },
     {
@@ -3440,7 +3390,7 @@
       "source_location": "L76",
       "_origin": "ast",
       "id": "src_common_messages_framemessage_from_json",
-      "community": 34,
+      "community": 27,
       "norm_label": ".from_json()"
     },
     {
@@ -3450,7 +3400,7 @@
       "source_location": "L81",
       "_origin": "ast",
       "id": "src_common_messages_controlmessage",
-      "community": 34,
+      "community": 42,
       "norm_label": "controlmessage"
     },
     {
@@ -3460,7 +3410,7 @@
       "source_location": "L88",
       "_origin": "ast",
       "id": "src_common_messages_controlmessage_to_json",
-      "community": 34,
+      "community": 42,
       "norm_label": ".to_json()"
     },
     {
@@ -3480,7 +3430,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_common_messages_rationale_1",
-      "community": 34,
+      "community": 52,
       "norm_label": "wire format for the websocket messages passed between services.  signal -> orche"
     },
     {
@@ -3490,7 +3440,7 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "src_common_messages_rationale_20",
-      "community": 13,
+      "community": 52,
       "norm_label": "signal service -> orchestrator. one scalar reward reading."
     },
     {
@@ -3510,7 +3460,7 @@
       "source_location": "L56",
       "_origin": "ast",
       "id": "src_common_messages_rationale_56",
-      "community": 34,
+      "community": 27,
       "norm_label": "generator service -> orchestrator. one rendered frame, ready to display.      ex"
     },
     {
@@ -3520,7 +3470,7 @@
       "source_location": "L82",
       "_origin": "ast",
       "id": "src_common_messages_rationale_82",
-      "community": 34,
+      "community": 42,
       "norm_label": "orchestrator -> any service. session control (start/stop/reset/calibrate)."
     },
     {
@@ -4067,7 +4017,7 @@
       "label": "PromptCurationManifest",
       "file_type": "code",
       "source_file": "src/generator/prompt_curation.py",
-      "source_location": "L54",
+      "source_location": "L72",
       "_origin": "ast",
       "id": "src_generator_prompt_curation_promptcurationmanifest",
       "community": 5,
@@ -4077,7 +4027,7 @@
       "label": ".to_dict()",
       "file_type": "code",
       "source_file": "src/generator/prompt_curation.py",
-      "source_location": "L65",
+      "source_location": "L83",
       "_origin": "ast",
       "id": "src_generator_prompt_curation_promptcurationmanifest_to_dict",
       "community": 5,
@@ -4097,7 +4047,7 @@
       "label": "_load_default_client()",
       "file_type": "code",
       "source_file": "src/generator/prompt_curation.py",
-      "source_location": "L69",
+      "source_location": "L87",
       "_origin": "ast",
       "id": "src_generator_prompt_curation_load_default_client",
       "community": 5,
@@ -4107,7 +4057,7 @@
       "label": "_extract_response_text()",
       "file_type": "code",
       "source_file": "src/generator/prompt_curation.py",
-      "source_location": "L82",
+      "source_location": "L100",
       "_origin": "ast",
       "id": "src_generator_prompt_curation_extract_response_text",
       "community": 5,
@@ -4117,7 +4067,7 @@
       "label": "_strip_code_fences()",
       "file_type": "code",
       "source_file": "src/generator/prompt_curation.py",
-      "source_location": "L104",
+      "source_location": "L122",
       "_origin": "ast",
       "id": "src_generator_prompt_curation_strip_code_fences",
       "community": 5,
@@ -4127,7 +4077,7 @@
       "label": "parse_prompt_curation_json()",
       "file_type": "code",
       "source_file": "src/generator/prompt_curation.py",
-      "source_location": "L113",
+      "source_location": "L131",
       "_origin": "ast",
       "id": "src_generator_prompt_curation_parse_prompt_curation_json",
       "community": 5,
@@ -4137,7 +4087,7 @@
       "label": "_clean_string_list()",
       "file_type": "code",
       "source_file": "src/generator/prompt_curation.py",
-      "source_location": "L130",
+      "source_location": "L148",
       "_origin": "ast",
       "id": "src_generator_prompt_curation_clean_string_list",
       "community": 5,
@@ -4147,17 +4097,27 @@
       "label": "validate_prompt_curation_payload()",
       "file_type": "code",
       "source_file": "src/generator/prompt_curation.py",
-      "source_location": "L141",
+      "source_location": "L159",
       "_origin": "ast",
       "id": "src_generator_prompt_curation_validate_prompt_curation_payload",
       "community": 5,
       "norm_label": "validate_prompt_curation_payload()"
     },
     {
+      "label": "validate_morph_compatibility()",
+      "file_type": "code",
+      "source_file": "src/generator/prompt_curation.py",
+      "source_location": "L200",
+      "_origin": "ast",
+      "id": "src_generator_prompt_curation_validate_morph_compatibility",
+      "community": 5,
+      "norm_label": "validate_morph_compatibility()"
+    },
+    {
       "label": "curate_prompt_manifest()",
       "file_type": "code",
       "source_file": "src/generator/prompt_curation.py",
-      "source_location": "L182",
+      "source_location": "L234",
       "_origin": "ast",
       "id": "src_generator_prompt_curation_curate_prompt_manifest",
       "community": 5,
@@ -4167,7 +4127,7 @@
       "label": "format_manifest_summary()",
       "file_type": "code",
       "source_file": "src/generator/prompt_curation.py",
-      "source_location": "L207",
+      "source_location": "L265",
       "_origin": "ast",
       "id": "src_generator_prompt_curation_format_manifest_summary",
       "community": 5,
@@ -4182,6 +4142,16 @@
       "id": "src_generator_prompt_curation_rationale_1",
       "community": 5,
       "norm_label": "openai-backed prompt curation for session-oriented diffusion runs.  this stage t"
+    },
+    {
+      "label": "Enforce the strict template-only contract for newly curated sessions.",
+      "file_type": "rationale",
+      "source_file": "src/generator/prompt_curation.py",
+      "source_location": "L201",
+      "_origin": "ast",
+      "id": "src_generator_prompt_curation_rationale_201",
+      "community": 5,
+      "norm_label": "enforce the strict template-only contract for newly curated sessions."
     },
     {
       "label": "remote_diffusion.py",
@@ -4320,7 +4290,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_generator_service",
-      "community": 15,
+      "community": 27,
       "norm_label": "service.py"
     },
     {
@@ -4360,7 +4330,7 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "src_generator_service_interpolator",
-      "community": 30,
+      "community": 27,
       "norm_label": "interpolator"
     },
     {
@@ -4370,7 +4340,7 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "src_generator_service_interpolator_init",
-      "community": 30,
+      "community": 27,
       "norm_label": ".__init__()"
     },
     {
@@ -4480,7 +4450,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_generator_service_rationale_1",
-      "community": 15,
+      "community": 27,
       "norm_label": "the generator service: z in, rendered pyramid frame out.  backend is picked by c"
     },
     {
@@ -4500,7 +4470,7 @@
       "source_location": "L43",
       "_origin": "ast",
       "id": "src_generator_service_rationale_43",
-      "community": 30,
+      "community": 27,
       "norm_label": "-- morphing process (animation)     linear interpolation between the last two ac"
     },
     {
@@ -4560,7 +4530,7 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "src_generator_to_3d_proceduralpseudo3d",
-      "community": 51,
+      "community": 15,
       "norm_label": "proceduralpseudo3d"
     },
     {
@@ -4610,7 +4580,7 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "src_generator_to_3d_rationale_36",
-      "community": 51,
+      "community": 15,
       "norm_label": "rotates the flat sprite to fake a 3d viewing angle - no mesh, no gpu."
     },
     {
@@ -4640,7 +4610,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_optimizer_evolution",
-      "community": 2,
+      "community": 17,
       "norm_label": "evolution.py"
     },
     {
@@ -4780,7 +4750,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_optimizer_evolution_rationale_1",
-      "community": 2,
+      "community": 17,
       "norm_label": "upgrades over the plain hill-climb, for when there's time: a (1+1) evolution str"
     },
     {
@@ -5360,7 +5330,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_optimizer_service",
-      "community": 2,
+      "community": 22,
       "norm_label": "service.py"
     },
     {
@@ -5370,7 +5340,7 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "src_optimizer_service_build_algorithm",
-      "community": 2,
+      "community": 22,
       "norm_label": "_build_algorithm()"
     },
     {
@@ -5390,7 +5360,7 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "src_optimizer_service_optimizerservice_init",
-      "community": 21,
+      "community": 22,
       "norm_label": ".__init__()"
     },
     {
@@ -5400,7 +5370,7 @@
       "source_location": "L68",
       "_origin": "ast",
       "id": "src_optimizer_service_optimizerservice_current_z",
-      "community": 22,
+      "community": 53,
       "norm_label": ".current_z()"
     },
     {
@@ -5410,7 +5380,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "src_optimizer_service_py_ndarray",
-      "community": 22,
+      "community": 53,
       "norm_label": "ndarray"
     },
     {
@@ -5420,7 +5390,7 @@
       "source_location": "L72",
       "_origin": "ast",
       "id": "src_optimizer_service_optimizerservice_pending_candidate",
-      "community": 22,
+      "community": 53,
       "norm_label": ".pending_candidate()"
     },
     {
@@ -5470,7 +5440,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_optimizer_service_rationale_1",
-      "community": 2,
+      "community": 22,
       "norm_label": "the optimizer service: reward in, latent stream out. ~150 lines including the st"
     },
     {
@@ -5480,7 +5450,7 @@
       "source_location": "L69",
       "_origin": "ast",
       "id": "src_optimizer_service_rationale_69",
-      "community": 22,
+      "community": 53,
       "norm_label": "the last *accepted* latent - what should be on screen at rest."
     },
     {
@@ -5490,7 +5460,7 @@
       "source_location": "L73",
       "_origin": "ast",
       "id": "src_optimizer_service_rationale_73",
-      "community": 22,
+      "community": 53,
       "norm_label": "the candidate currently being shown, awaiting a verdict."
     },
     {
@@ -5660,7 +5630,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_orchestrator_orchestrator",
-      "community": 34,
+      "community": 52,
       "norm_label": "orchestrator.py"
     },
     {
@@ -5680,7 +5650,7 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "src_orchestrator_orchestrator_localorchestrator_init",
-      "community": 33,
+      "community": 22,
       "norm_label": ".__init__()"
     },
     {
@@ -5690,7 +5660,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "src_orchestrator_orchestrator_py_framemessage",
-      "community": 33,
+      "community": 22,
       "norm_label": "framemessage"
     },
     {
@@ -5700,7 +5670,7 @@
       "source_location": "L76",
       "_origin": "ast",
       "id": "src_orchestrator_orchestrator_localorchestrator_calibrate",
-      "community": 33,
+      "community": 13,
       "norm_label": ".calibrate()"
     },
     {
@@ -5750,7 +5720,7 @@
       "source_location": "L170",
       "_origin": "ast",
       "id": "src_orchestrator_orchestrator_websocketorchestrator_init",
-      "community": 33,
+      "community": 22,
       "norm_label": ".__init__()"
     },
     {
@@ -5830,7 +5800,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_orchestrator_orchestrator_rationale_1",
-      "community": 34,
+      "community": 52,
       "norm_label": "wires signal -> optimizer -> generator together and drives the timing.  two flav"
     },
     {
@@ -5840,7 +5810,7 @@
       "source_location": "L77",
       "_origin": "ast",
       "id": "src_orchestrator_orchestrator_rationale_77",
-      "community": 33,
+      "community": 13,
       "norm_label": "real faa needs 30s of rest to fit the baseline; fake reward sources         (key"
     },
     {
@@ -5870,7 +5840,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_signal_service_baseline",
-      "community": 14,
+      "community": 0,
       "norm_label": "baseline.py"
     },
     {
@@ -5880,7 +5850,7 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "src_signal_service_baseline_calibrate_baseline",
-      "community": 14,
+      "community": 0,
       "norm_label": "calibrate_baseline()"
     },
     {
@@ -5890,7 +5860,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_signal_service_baseline_rationale_1",
-      "community": 14,
+      "community": 0,
       "norm_label": "per-session baseline calibration: 30s of rest before anything else runs."
     },
     {
@@ -5900,7 +5870,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "src_signal_service_baseline_rationale_13",
-      "community": 14,
+      "community": 0,
       "norm_label": "consume samples from `sample_iter` for `duration_s`, fitting the baseline."
     },
     {
@@ -5910,7 +5880,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_signal_service_eeg_sources",
-      "community": 14,
+      "community": 0,
       "norm_label": "eeg_sources.py"
     },
     {
@@ -5980,7 +5950,7 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "src_signal_service_eeg_sources_mockeegsource",
-      "community": 14,
+      "community": 0,
       "norm_label": "mockeegsource"
     },
     {
@@ -5990,7 +5960,7 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "src_signal_service_eeg_sources_mockeegsource_init",
-      "community": 14,
+      "community": 0,
       "norm_label": ".__init__()"
     },
     {
@@ -6000,7 +5970,7 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "src_signal_service_eeg_sources_mockeegsource_connect",
-      "community": 14,
+      "community": 0,
       "norm_label": ".connect()"
     },
     {
@@ -6010,7 +5980,7 @@
       "source_location": "L49",
       "_origin": "ast",
       "id": "src_signal_service_eeg_sources_mockeegsource_stream",
-      "community": 14,
+      "community": 0,
       "norm_label": ".stream()"
     },
     {
@@ -6020,7 +5990,7 @@
       "source_location": "L66",
       "_origin": "ast",
       "id": "src_signal_service_eeg_sources_mockeegsource_close",
-      "community": 14,
+      "community": 0,
       "norm_label": ".close()"
     },
     {
@@ -6220,7 +6190,7 @@
       "source_location": "L368",
       "_origin": "ast",
       "id": "src_signal_service_eeg_sources_wall_clock_pace",
-      "community": 14,
+      "community": 0,
       "norm_label": "wall_clock_pace()"
     },
     {
@@ -6230,7 +6200,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_signal_service_eeg_sources_rationale_1",
-      "community": 14,
+      "community": 0,
       "norm_label": "eeg data sources. all of them yield (timestamp, {channel_name: value}) samples."
     },
     {
@@ -6240,7 +6210,7 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "src_signal_service_eeg_sources_rationale_23",
-      "community": 14,
+      "community": 0,
       "norm_label": "synthetic 14-channel eeg for development without hardware.      alpha-band power"
     },
     {
@@ -6280,7 +6250,7 @@
       "source_location": "L369",
       "_origin": "ast",
       "id": "src_signal_service_eeg_sources_rationale_369",
-      "community": 14,
+      "community": 0,
       "norm_label": "wrap a sample iterator to yield in real time (for mock sources that     would ot"
     },
     {
@@ -6600,7 +6570,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_signal_service_fake_reward_rewardsource",
-      "community": 13,
+      "community": 52,
       "norm_label": "rewardsource"
     },
     {
@@ -6610,7 +6580,7 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "src_signal_service_fake_reward_rewardsource_read_reward",
-      "community": 13,
+      "community": 52,
       "norm_label": ".read_reward()"
     },
     {
@@ -6710,7 +6680,7 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "src_signal_service_fake_reward_rationale_20",
-      "community": 13,
+      "community": 52,
       "norm_label": "common interface: faarewardcomputer-backed or fake, doesn't matter."
     },
     {
@@ -6940,7 +6910,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_signal_service_service",
-      "community": 13,
+      "community": 52,
       "norm_label": "service.py"
     },
     {
@@ -6990,7 +6960,7 @@
       "source_location": "L68",
       "_origin": "ast",
       "id": "src_signal_service_service_signalservice",
-      "community": 13,
+      "community": 52,
       "norm_label": "signalservice"
     },
     {
@@ -7000,7 +6970,7 @@
       "source_location": "L71",
       "_origin": "ast",
       "id": "src_signal_service_service_signalservice_init",
-      "community": 13,
+      "community": 52,
       "norm_label": ".__init__()"
     },
     {
@@ -7040,7 +7010,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_signal_service_service_rationale_1",
-      "community": 13,
+      "community": 52,
       "norm_label": "the signal service: whatever the source, emit r(t) a few times a second.  downst"
     },
     {
@@ -7060,7 +7030,7 @@
       "source_location": "L69",
       "_origin": "ast",
       "id": "src_signal_service_service_rationale_69",
-      "community": 13,
+      "community": 52,
       "norm_label": "runs a rewardsource on a fixed cadence and hands rewardmessages to `on_reward`."
     },
     {
@@ -8100,7 +8070,7 @@
       "source_location": "L59",
       "_origin": "ast",
       "id": "tests_test_presentation_test_observe_observation_takes_one_step",
-      "community": 20,
+      "community": 22,
       "norm_label": "test_observe_observation_takes_one_step()"
     },
     {
@@ -8117,7 +8087,7 @@
       "label": "_payload()",
       "file_type": "code",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L15",
+      "source_location": "L16",
       "_origin": "ast",
       "id": "tests_test_prompt_curation_payload",
       "community": 5,
@@ -8127,7 +8097,7 @@
       "label": "test_validate_prompt_curation_payload_accepts_valid_shape()",
       "file_type": "code",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L29",
+      "source_location": "L30",
       "_origin": "ast",
       "id": "tests_test_prompt_curation_test_validate_prompt_curation_payload_accepts_valid_shape",
       "community": 5,
@@ -8137,7 +8107,7 @@
       "label": "test_validate_prompt_curation_payload_rejects_missing_scaffold()",
       "file_type": "code",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L39",
+      "source_location": "L40",
       "_origin": "ast",
       "id": "tests_test_prompt_curation_test_validate_prompt_curation_payload_rejects_missing_scaffold",
       "community": 5,
@@ -8147,7 +8117,7 @@
       "label": "test_validate_prompt_curation_payload_rejects_duplicate_anchor_labels()",
       "file_type": "code",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L47",
+      "source_location": "L48",
       "_origin": "ast",
       "id": "tests_test_prompt_curation_test_validate_prompt_curation_payload_rejects_duplicate_anchor_labels",
       "community": 5,
@@ -8157,7 +8127,7 @@
       "label": "test_validate_prompt_curation_payload_rejects_empty_anchor_labels()",
       "file_type": "code",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L55",
+      "source_location": "L56",
       "_origin": "ast",
       "id": "tests_test_prompt_curation_test_validate_prompt_curation_payload_rejects_empty_anchor_labels",
       "community": 5,
@@ -8167,7 +8137,7 @@
       "label": "test_validate_prompt_curation_payload_rejects_wrong_realized_prompt_count()",
       "file_type": "code",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L63",
+      "source_location": "L64",
       "_origin": "ast",
       "id": "tests_test_prompt_curation_test_validate_prompt_curation_payload_rejects_wrong_realized_prompt_count",
       "community": 5,
@@ -8177,17 +8147,57 @@
       "label": "test_validate_prompt_curation_payload_rejects_template_without_placeholder()",
       "file_type": "code",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L71",
+      "source_location": "L72",
       "_origin": "ast",
       "id": "tests_test_prompt_curation_test_validate_prompt_curation_payload_rejects_template_without_placeholder",
       "community": 5,
       "norm_label": "test_validate_prompt_curation_payload_rejects_template_without_placeholder()"
     },
     {
+      "label": "test_validate_morph_compatibility_accepts_exact_template_expansion()",
+      "file_type": "code",
+      "source_file": "tests/test_prompt_curation.py",
+      "source_location": "L80",
+      "_origin": "ast",
+      "id": "tests_test_prompt_curation_test_validate_morph_compatibility_accepts_exact_template_expansion",
+      "community": 5,
+      "norm_label": "test_validate_morph_compatibility_accepts_exact_template_expansion()"
+    },
+    {
+      "label": "test_validate_morph_compatibility_rejects_multiple_placeholders()",
+      "file_type": "code",
+      "source_file": "tests/test_prompt_curation.py",
+      "source_location": "L86",
+      "_origin": "ast",
+      "id": "tests_test_prompt_curation_test_validate_morph_compatibility_rejects_multiple_placeholders",
+      "community": 5,
+      "norm_label": "test_validate_morph_compatibility_rejects_multiple_placeholders()"
+    },
+    {
+      "label": "test_validate_morph_compatibility_rejects_per_anchor_scene_details()",
+      "file_type": "code",
+      "source_file": "tests/test_prompt_curation.py",
+      "source_location": "L98",
+      "_origin": "ast",
+      "id": "tests_test_prompt_curation_test_validate_morph_compatibility_rejects_per_anchor_scene_details",
+      "community": 5,
+      "norm_label": "test_validate_morph_compatibility_rejects_per_anchor_scene_details()"
+    },
+    {
+      "label": "test_validate_morph_compatibility_rejects_heterogeneous_mammoth_prompts()",
+      "file_type": "code",
+      "source_file": "tests/test_prompt_curation.py",
+      "source_location": "L107",
+      "_origin": "ast",
+      "id": "tests_test_prompt_curation_test_validate_morph_compatibility_rejects_heterogeneous_mammoth_prompts",
+      "community": 5,
+      "norm_label": "test_validate_morph_compatibility_rejects_heterogeneous_mammoth_prompts()"
+    },
+    {
       "label": "test_parse_prompt_curation_json_handles_code_fences()",
       "file_type": "code",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L79",
+      "source_location": "L138",
       "_origin": "ast",
       "id": "tests_test_prompt_curation_test_parse_prompt_curation_json_handles_code_fences",
       "community": 5,
@@ -8197,7 +8207,7 @@
       "label": "test_parse_prompt_curation_json_rejects_malformed_payload()",
       "file_type": "code",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L87",
+      "source_location": "L146",
       "_origin": "ast",
       "id": "tests_test_prompt_curation_test_parse_prompt_curation_json_rejects_malformed_payload",
       "community": 5,
@@ -8207,7 +8217,7 @@
       "label": "test_curate_prompt_manifest_uses_openai_client_response_text()",
       "file_type": "code",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L92",
+      "source_location": "L151",
       "_origin": "ast",
       "id": "tests_test_prompt_curation_test_curate_prompt_manifest_uses_openai_client_response_text",
       "community": 5,
@@ -8217,7 +8227,7 @@
       "label": "test_format_manifest_summary_mentions_anchor_labels()",
       "file_type": "code",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L109",
+      "source_location": "L170",
       "_origin": "ast",
       "id": "tests_test_prompt_curation_test_format_manifest_summary_mentions_anchor_labels",
       "community": 5,
@@ -8227,7 +8237,7 @@
       "label": "test_cli_writes_json_manifest()",
       "file_type": "code",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L118",
+      "source_location": "L179",
       "_origin": "ast",
       "id": "tests_test_prompt_curation_test_cli_writes_json_manifest",
       "community": 5,
@@ -12916,7 +12926,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L67",
+      "source_location": "L66",
       "weight": 1.0,
       "source": "scripts_run_mock_optimizer",
       "target": "scripts_run_mock_optimizer_breedtargetrewardsource",
@@ -12926,7 +12936,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L154",
+      "source_location": "L137",
       "weight": 1.0,
       "source": "scripts_run_mock_optimizer",
       "target": "scripts_run_mock_optimizer_main",
@@ -12936,7 +12946,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L142",
+      "source_location": "L125",
       "weight": 1.0,
       "source": "scripts_run_mock_optimizer",
       "target": "scripts_run_mock_optimizer_post_anchors",
@@ -12946,7 +12956,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L129",
+      "source_location": "L112",
       "weight": 1.0,
       "source": "scripts_run_mock_optimizer",
       "target": "scripts_run_mock_optimizer_post_render",
@@ -12956,7 +12966,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L107",
+      "source_location": "L106",
       "weight": 1.0,
       "source": "scripts_run_mock_optimizer",
       "target": "scripts_run_mock_optimizer_save_frame",
@@ -12966,17 +12976,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L113",
-      "weight": 1.0,
-      "source": "scripts_run_mock_optimizer",
-      "target": "scripts_run_mock_optimizer_sessionsnapshot",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L60",
+      "source_location": "L59",
       "weight": 1.0,
       "source": "scripts_run_mock_optimizer",
       "target": "scripts_run_mock_optimizer_softmax_weights",
@@ -13009,7 +13009,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L88",
+      "source_location": "L87",
       "weight": 1.0,
       "source": "scripts_run_mock_optimizer",
       "target": "src_common_messages_rewardmessage",
@@ -13086,7 +13086,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L91",
+      "source_location": "L90",
       "weight": 1.0,
       "source": "scripts_run_mock_optimizer_breedtargetrewardsource_read_reward",
       "target": "scripts_run_mock_optimizer_softmax_weights",
@@ -13097,7 +13097,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L256",
+      "source_location": "L237",
       "weight": 1.0,
       "source": "scripts_run_mock_optimizer_main",
       "target": "scripts_run_mock_optimizer_softmax_weights",
@@ -13108,7 +13108,7 @@
       "context": "return_type",
       "confidence": "EXTRACTED",
       "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L60",
+      "source_location": "L59",
       "weight": 1.0,
       "source": "scripts_run_mock_optimizer_softmax_weights",
       "target": "scripts_run_mock_optimizer_py_ndarray",
@@ -13119,7 +13119,7 @@
       "context": "parameter_type",
       "confidence": "EXTRACTED",
       "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L129",
+      "source_location": "L112",
       "weight": 1.0,
       "source": "scripts_run_mock_optimizer_post_render",
       "target": "scripts_run_mock_optimizer_py_ndarray",
@@ -13129,7 +13129,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L70",
+      "source_location": "L69",
       "weight": 1.0,
       "source": "scripts_run_mock_optimizer_breedtargetrewardsource",
       "target": "scripts_run_mock_optimizer_breedtargetrewardsource_init",
@@ -13139,7 +13139,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L87",
+      "source_location": "L86",
       "weight": 1.0,
       "source": "scripts_run_mock_optimizer_breedtargetrewardsource",
       "target": "scripts_run_mock_optimizer_breedtargetrewardsource_read_reward",
@@ -13159,7 +13159,7 @@
       "relation": "uses",
       "confidence": "INFERRED",
       "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L88",
+      "source_location": "L87",
       "weight": 0.8,
       "source": "scripts_run_mock_optimizer_breedtargetrewardsource",
       "target": "src_common_messages_rewardmessage",
@@ -13190,7 +13190,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L199",
+      "source_location": "L182",
       "weight": 1.0,
       "source": "scripts_run_mock_optimizer_main",
       "target": "scripts_run_mock_optimizer_breedtargetrewardsource",
@@ -13200,9 +13200,9 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L68",
+      "source_location": "L67",
       "weight": 1.0,
-      "source": "scripts_run_mock_optimizer_rationale_68",
+      "source": "scripts_run_mock_optimizer_rationale_67",
       "target": "scripts_run_mock_optimizer_breedtargetrewardsource",
       "confidence_score": 1.0
     },
@@ -13212,7 +13212,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L96",
+      "source_location": "L95",
       "weight": 1.0,
       "source": "scripts_run_mock_optimizer_breedtargetrewardsource_read_reward",
       "target": "src_common_messages_rewardmessage"
@@ -13222,7 +13222,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L245",
+      "source_location": "L226",
       "weight": 1.0,
       "source": "scripts_run_mock_optimizer_main",
       "target": "scripts_run_mock_optimizer_breedtargetrewardsource_read_reward",
@@ -13233,142 +13233,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L120",
-      "weight": 1.0,
-      "source": "scripts_run_mock_optimizer_sessionsnapshot_on_frame",
-      "target": "scripts_run_mock_optimizer_save_frame",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L126",
-      "weight": 1.0,
-      "source": "scripts_run_mock_optimizer_sessionsnapshot_save_end",
-      "target": "scripts_run_mock_optimizer_save_frame",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L229",
-      "weight": 1.0,
-      "source": "scripts_run_mock_optimizer_main",
-      "target": "scripts_run_mock_optimizer_sessionsnapshot",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "rationale_for",
-      "confidence": "EXTRACTED",
-      "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L114",
-      "weight": 1.0,
-      "source": "scripts_run_mock_optimizer_rationale_114",
-      "target": "scripts_run_mock_optimizer_sessionsnapshot",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "method",
-      "confidence": "EXTRACTED",
-      "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L116",
-      "weight": 1.0,
-      "source": "scripts_run_mock_optimizer_sessionsnapshot",
-      "target": "scripts_run_mock_optimizer_sessionsnapshot_init",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "method",
-      "confidence": "EXTRACTED",
-      "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L119",
-      "weight": 1.0,
-      "source": "scripts_run_mock_optimizer_sessionsnapshot",
-      "target": "scripts_run_mock_optimizer_sessionsnapshot_on_frame",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "method",
-      "confidence": "EXTRACTED",
-      "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L125",
-      "weight": 1.0,
-      "source": "scripts_run_mock_optimizer_sessionsnapshot",
-      "target": "scripts_run_mock_optimizer_sessionsnapshot_save_end",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "uses",
-      "confidence": "INFERRED",
-      "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L41",
-      "weight": 0.8,
-      "source": "scripts_run_mock_optimizer_sessionsnapshot",
-      "target": "src_common_config_config",
-      "confidence_score": 0.5
-    },
-    {
-      "relation": "uses",
-      "confidence": "INFERRED",
-      "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L88",
-      "weight": 0.8,
-      "source": "scripts_run_mock_optimizer_sessionsnapshot",
-      "target": "src_common_messages_rewardmessage",
-      "confidence_score": 0.5
-    },
-    {
-      "relation": "uses",
-      "confidence": "INFERRED",
-      "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L42",
-      "weight": 0.8,
-      "source": "scripts_run_mock_optimizer_sessionsnapshot",
-      "target": "src_generator_service_interpolator",
-      "confidence_score": 0.5
-    },
-    {
-      "relation": "uses",
-      "confidence": "INFERRED",
-      "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L44",
-      "weight": 0.8,
-      "source": "scripts_run_mock_optimizer_sessionsnapshot",
-      "target": "src_signal_service_fake_reward_scriptedrewardsource",
-      "confidence_score": 0.5
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L279",
-      "weight": 1.0,
-      "source": "scripts_run_mock_optimizer_main",
-      "target": "scripts_run_mock_optimizer_sessionsnapshot_save_end",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L278",
-      "weight": 1.0,
-      "source": "scripts_run_mock_optimizer_main",
-      "target": "scripts_run_mock_optimizer_post_render",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L220",
+      "source_location": "L203",
       "weight": 1.0,
       "source": "scripts_run_mock_optimizer_main",
       "target": "scripts_run_mock_optimizer_post_anchors",
@@ -13380,7 +13245,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L179",
+      "source_location": "L162",
       "weight": 1.0,
       "source": "scripts_run_mock_optimizer_main",
       "target": "src_common_config_config_load"
@@ -13390,7 +13255,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L214",
+      "source_location": "L197",
       "weight": 1.0,
       "source": "scripts_run_mock_optimizer_main",
       "target": "src_generator_service_interpolator",
@@ -13401,7 +13266,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L196",
+      "source_location": "L179",
       "weight": 1.0,
       "source": "scripts_run_mock_optimizer_main",
       "target": "src_optimizer_service_optimizerservice",
@@ -13412,7 +13277,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "scripts/run_mock_optimizer.py",
-      "source_location": "L208",
+      "source_location": "L191",
       "weight": 1.0,
       "source": "scripts_run_mock_optimizer_main",
       "target": "src_signal_service_fake_reward_scriptedrewardsource",
@@ -17284,7 +17149,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/generator/prompt_curation.py",
-      "source_location": "L130",
+      "source_location": "L148",
       "weight": 1.0,
       "source": "src_generator_prompt_curation",
       "target": "src_generator_prompt_curation_clean_string_list",
@@ -17294,7 +17159,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/generator/prompt_curation.py",
-      "source_location": "L182",
+      "source_location": "L234",
       "weight": 1.0,
       "source": "src_generator_prompt_curation",
       "target": "src_generator_prompt_curation_curate_prompt_manifest",
@@ -17304,7 +17169,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/generator/prompt_curation.py",
-      "source_location": "L82",
+      "source_location": "L100",
       "weight": 1.0,
       "source": "src_generator_prompt_curation",
       "target": "src_generator_prompt_curation_extract_response_text",
@@ -17314,7 +17179,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/generator/prompt_curation.py",
-      "source_location": "L207",
+      "source_location": "L265",
       "weight": 1.0,
       "source": "src_generator_prompt_curation",
       "target": "src_generator_prompt_curation_format_manifest_summary",
@@ -17324,7 +17189,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/generator/prompt_curation.py",
-      "source_location": "L69",
+      "source_location": "L87",
       "weight": 1.0,
       "source": "src_generator_prompt_curation",
       "target": "src_generator_prompt_curation_load_default_client",
@@ -17334,7 +17199,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/generator/prompt_curation.py",
-      "source_location": "L113",
+      "source_location": "L131",
       "weight": 1.0,
       "source": "src_generator_prompt_curation",
       "target": "src_generator_prompt_curation_parse_prompt_curation_json",
@@ -17344,7 +17209,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/generator/prompt_curation.py",
-      "source_location": "L54",
+      "source_location": "L72",
       "weight": 1.0,
       "source": "src_generator_prompt_curation",
       "target": "src_generator_prompt_curation_promptcurationmanifest",
@@ -17354,7 +17219,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/generator/prompt_curation.py",
-      "source_location": "L104",
+      "source_location": "L122",
       "weight": 1.0,
       "source": "src_generator_prompt_curation",
       "target": "src_generator_prompt_curation_strip_code_fences",
@@ -17364,7 +17229,17 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/generator/prompt_curation.py",
-      "source_location": "L141",
+      "source_location": "L200",
+      "weight": 1.0,
+      "source": "src_generator_prompt_curation",
+      "target": "src_generator_prompt_curation_validate_morph_compatibility",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/generator/prompt_curation.py",
+      "source_location": "L159",
       "weight": 1.0,
       "source": "src_generator_prompt_curation",
       "target": "src_generator_prompt_curation_validate_prompt_curation_payload",
@@ -17407,7 +17282,7 @@
       "context": "return_type",
       "confidence": "EXTRACTED",
       "source_file": "src/generator/prompt_curation.py",
-      "source_location": "L182",
+      "source_location": "L234",
       "weight": 1.0,
       "source": "src_generator_prompt_curation_curate_prompt_manifest",
       "target": "src_generator_prompt_curation_promptcurationmanifest",
@@ -17418,7 +17293,7 @@
       "context": "parameter_type",
       "confidence": "EXTRACTED",
       "source_file": "src/generator/prompt_curation.py",
-      "source_location": "L207",
+      "source_location": "L265",
       "weight": 1.0,
       "source": "src_generator_prompt_curation_format_manifest_summary",
       "target": "src_generator_prompt_curation_promptcurationmanifest",
@@ -17428,7 +17303,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "src/generator/prompt_curation.py",
-      "source_location": "L65",
+      "source_location": "L83",
       "weight": 1.0,
       "source": "src_generator_prompt_curation_promptcurationmanifest",
       "target": "src_generator_prompt_curation_promptcurationmanifest_to_dict",
@@ -17439,7 +17314,18 @@
       "context": "return_type",
       "confidence": "EXTRACTED",
       "source_file": "src/generator/prompt_curation.py",
-      "source_location": "L141",
+      "source_location": "L200",
+      "weight": 1.0,
+      "source": "src_generator_prompt_curation_validate_morph_compatibility",
+      "target": "src_generator_prompt_curation_promptcurationmanifest",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/generator/prompt_curation.py",
+      "source_location": "L159",
       "weight": 1.0,
       "source": "src_generator_prompt_curation_validate_prompt_curation_payload",
       "target": "src_generator_prompt_curation_promptcurationmanifest",
@@ -17462,7 +17348,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.8,
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L32",
+      "source_location": "L33",
       "weight": 1.0,
       "source": "tests_test_prompt_curation_test_validate_prompt_curation_payload_accepts_valid_shape",
       "target": "src_generator_prompt_curation_promptcurationmanifest"
@@ -17472,7 +17358,7 @@
       "context": "generic_arg",
       "confidence": "EXTRACTED",
       "source_file": "src/generator/prompt_curation.py",
-      "source_location": "L65",
+      "source_location": "L83",
       "weight": 1.0,
       "source": "src_generator_prompt_curation_promptcurationmanifest_to_dict",
       "target": "src_generator_prompt_curation_py_any",
@@ -17483,7 +17369,7 @@
       "context": "parameter_type",
       "confidence": "EXTRACTED",
       "source_file": "src/generator/prompt_curation.py",
-      "source_location": "L130",
+      "source_location": "L148",
       "weight": 1.0,
       "source": "src_generator_prompt_curation_clean_string_list",
       "target": "src_generator_prompt_curation_py_any",
@@ -17494,7 +17380,7 @@
       "context": "parameter_type",
       "confidence": "EXTRACTED",
       "source_file": "src/generator/prompt_curation.py",
-      "source_location": "L182",
+      "source_location": "L234",
       "weight": 1.0,
       "source": "src_generator_prompt_curation_curate_prompt_manifest",
       "target": "src_generator_prompt_curation_py_any",
@@ -17505,7 +17391,7 @@
       "context": "parameter_type",
       "confidence": "EXTRACTED",
       "source_file": "src/generator/prompt_curation.py",
-      "source_location": "L82",
+      "source_location": "L100",
       "weight": 1.0,
       "source": "src_generator_prompt_curation_extract_response_text",
       "target": "src_generator_prompt_curation_py_any",
@@ -17516,7 +17402,7 @@
       "context": "generic_arg",
       "confidence": "EXTRACTED",
       "source_file": "src/generator/prompt_curation.py",
-      "source_location": "L113",
+      "source_location": "L131",
       "weight": 1.0,
       "source": "src_generator_prompt_curation_parse_prompt_curation_json",
       "target": "src_generator_prompt_curation_py_any",
@@ -17527,7 +17413,7 @@
       "context": "generic_arg",
       "confidence": "EXTRACTED",
       "source_file": "src/generator/prompt_curation.py",
-      "source_location": "L141",
+      "source_location": "L159",
       "weight": 1.0,
       "source": "src_generator_prompt_curation_validate_prompt_curation_payload",
       "target": "src_generator_prompt_curation_py_any",
@@ -17538,7 +17424,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/generator/prompt_curation.py",
-      "source_location": "L195",
+      "source_location": "L247",
       "weight": 1.0,
       "source": "src_generator_prompt_curation_curate_prompt_manifest",
       "target": "src_generator_prompt_curation_load_default_client",
@@ -17549,7 +17435,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/generator/prompt_curation.py",
-      "source_location": "L202",
+      "source_location": "L254",
       "weight": 1.0,
       "source": "src_generator_prompt_curation_curate_prompt_manifest",
       "target": "src_generator_prompt_curation_extract_response_text",
@@ -17560,7 +17446,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/generator/prompt_curation.py",
-      "source_location": "L114",
+      "source_location": "L132",
       "weight": 1.0,
       "source": "src_generator_prompt_curation_parse_prompt_curation_json",
       "target": "src_generator_prompt_curation_strip_code_fences",
@@ -17571,7 +17457,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/generator/prompt_curation.py",
-      "source_location": "L203",
+      "source_location": "L255",
       "weight": 1.0,
       "source": "src_generator_prompt_curation_curate_prompt_manifest",
       "target": "src_generator_prompt_curation_parse_prompt_curation_json",
@@ -17593,7 +17479,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L82",
+      "source_location": "L141",
       "weight": 1.0,
       "source": "tests_test_prompt_curation_test_parse_prompt_curation_json_handles_code_fences",
       "target": "src_generator_prompt_curation_parse_prompt_curation_json",
@@ -17604,7 +17490,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L89",
+      "source_location": "L148",
       "weight": 1.0,
       "source": "tests_test_prompt_curation_test_parse_prompt_curation_json_rejects_malformed_payload",
       "target": "src_generator_prompt_curation_parse_prompt_curation_json",
@@ -17615,7 +17501,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/generator/prompt_curation.py",
-      "source_location": "L157",
+      "source_location": "L175",
       "weight": 1.0,
       "source": "src_generator_prompt_curation_validate_prompt_curation_payload",
       "target": "src_generator_prompt_curation_clean_string_list",
@@ -17626,7 +17512,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/generator/prompt_curation.py",
-      "source_location": "L204",
+      "source_location": "L256",
       "weight": 1.0,
       "source": "src_generator_prompt_curation_curate_prompt_manifest",
       "target": "src_generator_prompt_curation_validate_prompt_curation_payload",
@@ -17648,7 +17534,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L110",
+      "source_location": "L171",
       "weight": 1.0,
       "source": "tests_test_prompt_curation_test_format_manifest_summary_mentions_anchor_labels",
       "target": "src_generator_prompt_curation_validate_prompt_curation_payload",
@@ -17659,7 +17545,51 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L30",
+      "source_location": "L81",
+      "weight": 1.0,
+      "source": "tests_test_prompt_curation_test_validate_morph_compatibility_accepts_exact_template_expansion",
+      "target": "src_generator_prompt_curation_validate_prompt_curation_payload",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_prompt_curation.py",
+      "source_location": "L132",
+      "weight": 1.0,
+      "source": "tests_test_prompt_curation_test_validate_morph_compatibility_rejects_heterogeneous_mammoth_prompts",
+      "target": "src_generator_prompt_curation_validate_prompt_curation_payload",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_prompt_curation.py",
+      "source_location": "L92",
+      "weight": 1.0,
+      "source": "tests_test_prompt_curation_test_validate_morph_compatibility_rejects_multiple_placeholders",
+      "target": "src_generator_prompt_curation_validate_prompt_curation_payload",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_prompt_curation.py",
+      "source_location": "L101",
+      "weight": 1.0,
+      "source": "tests_test_prompt_curation_test_validate_morph_compatibility_rejects_per_anchor_scene_details",
+      "target": "src_generator_prompt_curation_validate_prompt_curation_payload",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_prompt_curation.py",
+      "source_location": "L31",
       "weight": 1.0,
       "source": "tests_test_prompt_curation_test_validate_prompt_curation_payload_accepts_valid_shape",
       "target": "src_generator_prompt_curation_validate_prompt_curation_payload",
@@ -17670,7 +17600,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L52",
+      "source_location": "L53",
       "weight": 1.0,
       "source": "tests_test_prompt_curation_test_validate_prompt_curation_payload_rejects_duplicate_anchor_labels",
       "target": "src_generator_prompt_curation_validate_prompt_curation_payload",
@@ -17681,7 +17611,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L60",
+      "source_location": "L61",
       "weight": 1.0,
       "source": "tests_test_prompt_curation_test_validate_prompt_curation_payload_rejects_empty_anchor_labels",
       "target": "src_generator_prompt_curation_validate_prompt_curation_payload",
@@ -17692,7 +17622,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L44",
+      "source_location": "L45",
       "weight": 1.0,
       "source": "tests_test_prompt_curation_test_validate_prompt_curation_payload_rejects_missing_scaffold",
       "target": "src_generator_prompt_curation_validate_prompt_curation_payload",
@@ -17703,7 +17633,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L76",
+      "source_location": "L77",
       "weight": 1.0,
       "source": "tests_test_prompt_curation_test_validate_prompt_curation_payload_rejects_template_without_placeholder",
       "target": "src_generator_prompt_curation_validate_prompt_curation_payload",
@@ -17714,10 +17644,86 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L68",
+      "source_location": "L69",
       "weight": 1.0,
       "source": "tests_test_prompt_curation_test_validate_prompt_curation_payload_rejects_wrong_realized_prompt_count",
       "target": "src_generator_prompt_curation_validate_prompt_curation_payload",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/generator/prompt_curation.py",
+      "source_location": "L262",
+      "weight": 1.0,
+      "source": "src_generator_prompt_curation_curate_prompt_manifest",
+      "target": "src_generator_prompt_curation_validate_morph_compatibility",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/generator/prompt_curation.py",
+      "source_location": "L201",
+      "weight": 1.0,
+      "source": "src_generator_prompt_curation_rationale_201",
+      "target": "src_generator_prompt_curation_validate_morph_compatibility",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_prompt_curation.py",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "tests_test_prompt_curation",
+      "target": "src_generator_prompt_curation_validate_morph_compatibility",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_prompt_curation.py",
+      "source_location": "L83",
+      "weight": 1.0,
+      "source": "tests_test_prompt_curation_test_validate_morph_compatibility_accepts_exact_template_expansion",
+      "target": "src_generator_prompt_curation_validate_morph_compatibility",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_prompt_curation.py",
+      "source_location": "L135",
+      "weight": 1.0,
+      "source": "tests_test_prompt_curation_test_validate_morph_compatibility_rejects_heterogeneous_mammoth_prompts",
+      "target": "src_generator_prompt_curation_validate_morph_compatibility",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_prompt_curation.py",
+      "source_location": "L95",
+      "weight": 1.0,
+      "source": "tests_test_prompt_curation_test_validate_morph_compatibility_rejects_multiple_placeholders",
+      "target": "src_generator_prompt_curation_validate_morph_compatibility",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_prompt_curation.py",
+      "source_location": "L104",
+      "weight": 1.0,
+      "source": "tests_test_prompt_curation_test_validate_morph_compatibility_rejects_per_anchor_scene_details",
+      "target": "src_generator_prompt_curation_validate_morph_compatibility",
       "confidence_score": 1.0
     },
     {
@@ -17736,7 +17742,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L130",
+      "source_location": "L191",
       "weight": 1.0,
       "source": "tests_test_prompt_curation_test_cli_writes_json_manifest",
       "target": "src_generator_prompt_curation_curate_prompt_manifest",
@@ -17747,7 +17753,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L103",
+      "source_location": "L164",
       "weight": 1.0,
       "source": "tests_test_prompt_curation_test_curate_prompt_manifest_uses_openai_client_response_text",
       "target": "src_generator_prompt_curation_curate_prompt_manifest",
@@ -17769,7 +17775,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L112",
+      "source_location": "L173",
       "weight": 1.0,
       "source": "tests_test_prompt_curation_test_format_manifest_summary_mentions_anchor_labels",
       "target": "src_generator_prompt_curation_format_manifest_summary",
@@ -25168,7 +25174,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L15",
+      "source_location": "L16",
       "weight": 1.0,
       "source": "tests_test_prompt_curation",
       "target": "tests_test_prompt_curation_payload",
@@ -25178,7 +25184,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L118",
+      "source_location": "L179",
       "weight": 1.0,
       "source": "tests_test_prompt_curation",
       "target": "tests_test_prompt_curation_test_cli_writes_json_manifest",
@@ -25188,7 +25194,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L92",
+      "source_location": "L151",
       "weight": 1.0,
       "source": "tests_test_prompt_curation",
       "target": "tests_test_prompt_curation_test_curate_prompt_manifest_uses_openai_client_response_text",
@@ -25198,7 +25204,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L109",
+      "source_location": "L170",
       "weight": 1.0,
       "source": "tests_test_prompt_curation",
       "target": "tests_test_prompt_curation_test_format_manifest_summary_mentions_anchor_labels",
@@ -25208,7 +25214,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L79",
+      "source_location": "L138",
       "weight": 1.0,
       "source": "tests_test_prompt_curation",
       "target": "tests_test_prompt_curation_test_parse_prompt_curation_json_handles_code_fences",
@@ -25218,7 +25224,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L87",
+      "source_location": "L146",
       "weight": 1.0,
       "source": "tests_test_prompt_curation",
       "target": "tests_test_prompt_curation_test_parse_prompt_curation_json_rejects_malformed_payload",
@@ -25228,7 +25234,47 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L29",
+      "source_location": "L80",
+      "weight": 1.0,
+      "source": "tests_test_prompt_curation",
+      "target": "tests_test_prompt_curation_test_validate_morph_compatibility_accepts_exact_template_expansion",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_prompt_curation.py",
+      "source_location": "L107",
+      "weight": 1.0,
+      "source": "tests_test_prompt_curation",
+      "target": "tests_test_prompt_curation_test_validate_morph_compatibility_rejects_heterogeneous_mammoth_prompts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_prompt_curation.py",
+      "source_location": "L86",
+      "weight": 1.0,
+      "source": "tests_test_prompt_curation",
+      "target": "tests_test_prompt_curation_test_validate_morph_compatibility_rejects_multiple_placeholders",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_prompt_curation.py",
+      "source_location": "L98",
+      "weight": 1.0,
+      "source": "tests_test_prompt_curation",
+      "target": "tests_test_prompt_curation_test_validate_morph_compatibility_rejects_per_anchor_scene_details",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_prompt_curation.py",
+      "source_location": "L30",
       "weight": 1.0,
       "source": "tests_test_prompt_curation",
       "target": "tests_test_prompt_curation_test_validate_prompt_curation_payload_accepts_valid_shape",
@@ -25238,7 +25284,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L47",
+      "source_location": "L48",
       "weight": 1.0,
       "source": "tests_test_prompt_curation",
       "target": "tests_test_prompt_curation_test_validate_prompt_curation_payload_rejects_duplicate_anchor_labels",
@@ -25248,7 +25294,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L55",
+      "source_location": "L56",
       "weight": 1.0,
       "source": "tests_test_prompt_curation",
       "target": "tests_test_prompt_curation_test_validate_prompt_curation_payload_rejects_empty_anchor_labels",
@@ -25258,7 +25304,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L39",
+      "source_location": "L40",
       "weight": 1.0,
       "source": "tests_test_prompt_curation",
       "target": "tests_test_prompt_curation_test_validate_prompt_curation_payload_rejects_missing_scaffold",
@@ -25268,7 +25314,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L71",
+      "source_location": "L72",
       "weight": 1.0,
       "source": "tests_test_prompt_curation",
       "target": "tests_test_prompt_curation_test_validate_prompt_curation_payload_rejects_template_without_placeholder",
@@ -25278,7 +25324,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L63",
+      "source_location": "L64",
       "weight": 1.0,
       "source": "tests_test_prompt_curation",
       "target": "tests_test_prompt_curation_test_validate_prompt_curation_payload_rejects_wrong_realized_prompt_count",
@@ -25289,7 +25335,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L110",
+      "source_location": "L171",
       "weight": 1.0,
       "source": "tests_test_prompt_curation_test_format_manifest_summary_mentions_anchor_labels",
       "target": "tests_test_prompt_curation_payload",
@@ -25300,7 +25346,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L80",
+      "source_location": "L139",
       "weight": 1.0,
       "source": "tests_test_prompt_curation_test_parse_prompt_curation_json_handles_code_fences",
       "target": "tests_test_prompt_curation_payload",
@@ -25311,7 +25357,40 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L30",
+      "source_location": "L81",
+      "weight": 1.0,
+      "source": "tests_test_prompt_curation_test_validate_morph_compatibility_accepts_exact_template_expansion",
+      "target": "tests_test_prompt_curation_payload",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_prompt_curation.py",
+      "source_location": "L87",
+      "weight": 1.0,
+      "source": "tests_test_prompt_curation_test_validate_morph_compatibility_rejects_multiple_placeholders",
+      "target": "tests_test_prompt_curation_payload",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_prompt_curation.py",
+      "source_location": "L99",
+      "weight": 1.0,
+      "source": "tests_test_prompt_curation_test_validate_morph_compatibility_rejects_per_anchor_scene_details",
+      "target": "tests_test_prompt_curation_payload",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_prompt_curation.py",
+      "source_location": "L31",
       "weight": 1.0,
       "source": "tests_test_prompt_curation_test_validate_prompt_curation_payload_accepts_valid_shape",
       "target": "tests_test_prompt_curation_payload",
@@ -25322,7 +25401,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L48",
+      "source_location": "L49",
       "weight": 1.0,
       "source": "tests_test_prompt_curation_test_validate_prompt_curation_payload_rejects_duplicate_anchor_labels",
       "target": "tests_test_prompt_curation_payload",
@@ -25333,7 +25412,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L56",
+      "source_location": "L57",
       "weight": 1.0,
       "source": "tests_test_prompt_curation_test_validate_prompt_curation_payload_rejects_empty_anchor_labels",
       "target": "tests_test_prompt_curation_payload",
@@ -25344,7 +25423,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L40",
+      "source_location": "L41",
       "weight": 1.0,
       "source": "tests_test_prompt_curation_test_validate_prompt_curation_payload_rejects_missing_scaffold",
       "target": "tests_test_prompt_curation_payload",
@@ -25355,7 +25434,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L72",
+      "source_location": "L73",
       "weight": 1.0,
       "source": "tests_test_prompt_curation_test_validate_prompt_curation_payload_rejects_template_without_placeholder",
       "target": "tests_test_prompt_curation_payload",
@@ -25366,7 +25445,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "tests/test_prompt_curation.py",
-      "source_location": "L64",
+      "source_location": "L65",
       "weight": 1.0,
       "source": "tests_test_prompt_curation_test_validate_prompt_curation_payload_rejects_wrong_realized_prompt_count",
       "target": "tests_test_prompt_curation_payload",
@@ -25878,5 +25957,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "6f5eb27644a75b316e8bb167445a58e00eb901d0"
+  "built_at_commit": "6184421ae863dbef7ae4693e2375968953666bed"
 }
