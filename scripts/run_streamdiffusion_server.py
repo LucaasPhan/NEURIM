@@ -215,6 +215,29 @@ def load_pipeline(model_id: str, seed: int, frame_size: int, device: str | None 
     return pipe, fixed_latent, device, dtype
 
 
+def build_anchor_prompts(template: str | None, attributes: list[str] | None, fallback: list[str]) -> list[str]:
+    """Build the anchor bank from a template + attribute list, mirroring
+    continuous_dog_latent_morph.py's PROMPT_TEMPLATE/{breed} pattern - every
+    anchor is guaranteed to share the same scaffold, structurally preventing
+    the kind of malformed/inconsistent entry that hand-typing full sentences
+    into config.yaml risks (e.g. a stray one-word entry breaking the parallel
+    structure PCA needs). Falls back to config.generator.anchor_prompts
+    (hand-authored full strings) if no template/attributes are given - that
+    path still supports varying multiple attributes at once per anchor
+    (e.g. fur color AND collar AND pose), which a single-placeholder template
+    can't express.
+    """
+    if not template or not attributes:
+        return list(fallback)
+    if "{attribute}" not in template:
+        # str.format() silently ignores unused kwargs - it would NOT raise here,
+        # it would just return the template unchanged for every attribute,
+        # producing n identical "anchors" (a different degenerate case than the
+        # one this whole flow exists to prevent). Check explicitly instead.
+        sys.exit("[latent-walk-server] --prompt-template must contain a literal {attribute} placeholder")
+    return [template.format(attribute=attr) for attr in attributes]
+
+
 def _fit_projector(pipe, anchor_prompts: list[str], dims: int, device: str) -> tuple[PCAProjector, tuple[int, int]]:
     if len(anchor_prompts) < 2:
         print(f"[latent-walk-server] WARNING: only {len(anchor_prompts)} anchor prompt(s) - "
@@ -251,19 +274,31 @@ def main() -> None:
     parser.add_argument("--guidance-scale", type=float, default=0.0,
                          help="0.0 (default, no CFG) for turbo/LCM. ~7-8 for a plain SD checkpoint.")
     parser.add_argument("--seed", type=int, default=None, help="defaults to config.generator.remote_diffusion_seed")
+    parser.add_argument("--prompt-template", default=None,
+                         help='template with a single {attribute} placeholder, e.g. '
+                              '"A {attribute} cat sits centered against a plain neutral background, '
+                              'shown at medium distance under soft studio lighting in a realistic style, '
+                              'with a calm expression and a forward-facing gaze." - applied to each '
+                              '--attributes value to build the anchor bank programmatically. Requires '
+                              '--attributes too; falls back to config.generator.anchor_prompts if omitted.')
+    parser.add_argument("--attributes", nargs="+", default=None,
+                         help='values substituted into --prompt-template, one per anchor, e.g. '
+                              '--attributes white cream "pale orange" "orange tabby" "gray tabby" '
+                              '"solid gray" "bluish-gray" "dark brown" black "black-and-white"')
     args = parser.parse_args()
 
     config = Config.load()
     seed = args.seed if args.seed is not None else config.generator.remote_diffusion_seed
     frame_size = config.generator.frame_size
+    anchor_prompts = build_anchor_prompts(args.prompt_template, args.attributes, config.generator.anchor_prompts)
 
     pipe, fixed_latent, device, dtype = load_pipeline(args.model_id, seed, frame_size)
-    projector, embed_shape = _fit_projector(pipe, config.generator.anchor_prompts, config.optimizer.search_dims, device)
+    projector, embed_shape = _fit_projector(pipe, anchor_prompts, config.optimizer.search_dims, device)
     render_server = LatentWalkRenderServer(
         pipe, projector, embed_shape, frame_size, config.optimizer.search_dims,
         fixed_latent, device, dtype, args.steps, args.guidance_scale,
     )
-    render_server.anchor_prompts = list(config.generator.anchor_prompts)
+    render_server.anchor_prompts = anchor_prompts
 
     server = ThreadingHTTPServer((args.host, args.port), make_handler(render_server))
     print(f"[latent-walk-server] listening on http://{args.host}:{args.port} "
