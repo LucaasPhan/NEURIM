@@ -52,7 +52,12 @@ faa:
 # converges noticeably more reliably than 12+ within a demo-length step
 # budget - see tests/test_optimizer.py and the tuning notes in README.md.
 optimizer:
-  search_dims: 8
+  # For run_stablediffusion.py this MUST equal len(--breeds): every z dimension
+  # directly IS one breed's weight (no PCA compression), so dimensionality is
+  # exact. 7 == the 7 default dog breeds in run_stablediffusion.py's
+  # DEFAULT_BREEDS. (The old PCA path in run_streamdiffusion_server.py used 8 -
+  # the favorable end of the spec's 8-16 range - which is unrelated here.)
+  search_dims: 7
   step_size_explore: 0.25
   step_size_refine_min: 0.03
   step_momentum: 0.6
