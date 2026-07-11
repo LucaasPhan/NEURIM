@@ -5,8 +5,6 @@ import { Brain, Plus, ChevronDown, Mic, Loader2 } from "lucide-react";
 import { examplePrompts } from "@/lib/mock-frame";
 import { ThemeToggle } from "@/components/neurim/theme-toggle";
 
-const USER_NAME = "Lucas";
-
 export function Landing({
   onSubmit,
   isSubmitting,
@@ -24,16 +22,12 @@ export function Landing({
   return (
     <div className="min-h-screen relative bg-landing-bg overflow-hidden">
       {/* Top bar */}
-      <div className="absolute top-0 left-0 right-0 px-6 py-[18px] flex items-center justify-between z-20">
+      <div className="absolute top-0 left-0 right-0 px-6 py-[18px] flex items-center z-20">
         <div className="flex items-center gap-2">
           <Brain size={20} className="text-approach" />
           <span className="font-sans font-semibold text-[16px] tracking-[-0.01em] text-foreground">
             NEURIM
           </span>
-        </div>
-
-        <div className="h-8 w-8 rounded-full bg-primary grid place-items-center text-white font-sans font-semibold text-[13px]">
-          {USER_NAME[0]}
         </div>
       </div>
 
