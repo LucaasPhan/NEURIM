@@ -65,6 +65,11 @@ def create_app(
         python_executable=os.environ.get("NEURIM_DIFFUSION_PYTHON"),
         cuda_visible_devices=os.environ.get("NEURIM_DIFFUSION_CUDA_VISIBLE_DEVICES"),
         model=os.environ.get("NEURIM_DIFFUSION_MODEL", "stabilityai/sd-turbo"),
+        steps=_env_int("NEURIM_DIFFUSION_STEPS", 1),
+        guidance_scale=_env_float("NEURIM_DIFFUSION_GUIDANCE_SCALE", 0.0),
+        temperature=_env_float("NEURIM_DIFFUSION_TEMPERATURE", 8.0),
+        size=_env_int("NEURIM_DIFFUSION_SIZE", 0) or None,
+        seed=_env_int("NEURIM_DIFFUSION_SEED", 0) if os.environ.get("NEURIM_DIFFUSION_SEED") else None,
         startup_timeout_s=_env_float("NEURIM_DIFFUSION_STARTUP_TIMEOUT_S", 300.0),
     )
     output_dir = repo_root / "data" / "processed" / "prompt_sessions"

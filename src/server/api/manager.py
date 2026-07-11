@@ -20,7 +20,7 @@ from src.session.curation import PromptCurationService
 from src.session.diffusion_client import DiffusionClient
 from src.session.frame_store import FrameStore
 from src.session.optimizer_loop import OptimizerRenderLoop
-from src.signal_service.eeg_sources import MockEEGSource
+from src.signal_service.fake_reward import ScriptedRewardSource
 from src.signal_service.service import FAARewardSource, build_faa_service
 
 from .eeg import EEGConnectionManager
@@ -93,7 +93,6 @@ class SessionManager:
         self._last_exit_code: int | None = None
         self._logs = ProcessLogStore(max_log_lines)
         self._manifest_path: str | None = None
-        self._mock_source: MockEEGSource | None = None
         self._phase = "idle"
         self._result_ready = False
         self._result_refined = False
@@ -110,7 +109,7 @@ class SessionManager:
             self._logs.clear()
             self._logs.append(f"[api] prompt: {prompt}")
 
-        reward_source = self._build_reward_source(request)
+        reward_source = None if request.mock else self._build_reward_source(request)
         manifest = self._curate_manifest(prompt)
         manifest_path = self._write_manifest(manifest)
         server_url = request.server_url
@@ -144,6 +143,8 @@ class SessionManager:
             finalizer=self._make_finalizer(),
             finalize_prompt=prompt,
         )
+        if request.mock:
+            reward_source = self._build_mock_reward_source(loop)
         stop_event = threading.Event()
         thread = threading.Thread(
             target=self._run_session,
@@ -297,8 +298,7 @@ class SessionManager:
 
     def _build_reward_source(self, request: StartSessionRequest) -> FAARewardSource:
         if request.mock:
-            self._mock_source = MockEEGSource(self.config.eeg.channels, self.config.eeg.sample_rate_hz)
-            return build_faa_service(self.config, self._mock_source).reward_source  # type: ignore[return-value]
+            raise RuntimeError("mock reward source is built after optimizer initialization")
         if self.eeg_manager is None:
             raise HTTPException(status_code=503, detail="EEG manager is not configured")
         try:
@@ -308,6 +308,20 @@ class SessionManager:
                 status_code=409,
                 detail={"error": str(exc), "eeg": self.eeg_manager.status()},
             ) from exc
+
+    def _build_mock_reward_source(self, loop: OptimizerRenderLoop) -> ScriptedRewardSource:
+        target = np.random.default_rng().uniform(
+            -0.8,
+            0.8,
+            size=self.config.optimizer.search_dims,
+        )
+        with self._lock:
+            self._logs.append("[api] using scripted mock reward target")
+        return ScriptedRewardSource(
+            target=target,
+            get_current_z=loop.optimizer.pending_candidate,
+            noise_std=0.05,
+        )
 
     def _run_session(
         self,

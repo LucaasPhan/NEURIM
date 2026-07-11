@@ -21,6 +21,11 @@ class ApiSettings:
     diffusion_cuda_visible_devices: str | None = None
     diffusion_python: str | None = None
     diffusion_model: str = "stabilityai/sd-turbo"
+    diffusion_steps: int = 1
+    diffusion_guidance_scale: float = 0.0
+    diffusion_temperature: float = 8.0
+    diffusion_size: int | None = None
+    diffusion_seed: int | None = None
     diffusion_supervisor_url: str | None = None
     cors_origins: tuple[str, ...] = (
         "http://localhost:3000",
@@ -53,6 +58,38 @@ class ApiSettings:
             )
         except ValueError:
             startup_timeout = defaults.diffusion_startup_timeout_s
+        try:
+            diffusion_steps = int(os.environ.get("NEURIM_DIFFUSION_STEPS", defaults.diffusion_steps))
+        except ValueError:
+            diffusion_steps = defaults.diffusion_steps
+        try:
+            guidance_scale = float(
+                os.environ.get("NEURIM_DIFFUSION_GUIDANCE_SCALE", defaults.diffusion_guidance_scale)
+            )
+        except ValueError:
+            guidance_scale = defaults.diffusion_guidance_scale
+        try:
+            temperature = float(
+                os.environ.get("NEURIM_DIFFUSION_TEMPERATURE", defaults.diffusion_temperature)
+            )
+        except ValueError:
+            temperature = defaults.diffusion_temperature
+        try:
+            size = (
+                int(os.environ["NEURIM_DIFFUSION_SIZE"])
+                if os.environ.get("NEURIM_DIFFUSION_SIZE")
+                else defaults.diffusion_size
+            )
+        except ValueError:
+            size = defaults.diffusion_size
+        try:
+            seed = (
+                int(os.environ["NEURIM_DIFFUSION_SEED"])
+                if os.environ.get("NEURIM_DIFFUSION_SEED")
+                else defaults.diffusion_seed
+            )
+        except ValueError:
+            seed = defaults.diffusion_seed
         manage_diffusion = os.environ.get("NEURIM_MANAGE_DIFFUSION", "").lower() in {
             "1",
             "true",
@@ -70,6 +107,11 @@ class ApiSettings:
             diffusion_cuda_visible_devices=os.environ.get("NEURIM_DIFFUSION_CUDA_VISIBLE_DEVICES"),
             diffusion_python=os.environ.get("NEURIM_DIFFUSION_PYTHON"),
             diffusion_model=os.environ.get("NEURIM_DIFFUSION_MODEL", defaults.diffusion_model),
+            diffusion_steps=diffusion_steps,
+            diffusion_guidance_scale=guidance_scale,
+            diffusion_temperature=temperature,
+            diffusion_size=size,
+            diffusion_seed=seed,
             diffusion_supervisor_url=os.environ.get("NEURIM_DIFFUSION_SUPERVISOR_URL"),
             cors_origins=configured_origins,
         )

@@ -27,6 +27,11 @@ class DiffusionProcessManager:
         python_executable: str | None = None,
         cuda_visible_devices: str | None = None,
         model: str = "stabilityai/sd-turbo",
+        steps: int = 1,
+        guidance_scale: float = 0.0,
+        temperature: float = 8.0,
+        size: int | None = None,
+        seed: int | None = None,
         startup_timeout_s: float = 300.0,
     ) -> None:
         self.repo_root = repo_root
@@ -35,6 +40,11 @@ class DiffusionProcessManager:
         self.python_executable = python_executable or sys.executable
         self.cuda_visible_devices = cuda_visible_devices
         self.model = model
+        self.steps = steps
+        self.guidance_scale = guidance_scale
+        self.temperature = temperature
+        self.size = size
+        self.seed = seed
         self.startup_timeout_s = startup_timeout_s
         self._process: subprocess.Popen | None = None
         self._manifest_path: Path | None = None
@@ -56,7 +66,17 @@ class DiffusionProcessManager:
             str(self.port),
             "--model",
             self.model,
+            "--steps",
+            str(self.steps),
+            "--guidance-scale",
+            str(self.guidance_scale),
+            "--temperature",
+            str(self.temperature),
         ]
+        if self.size is not None:
+            command.extend(["--size", str(self.size)])
+        if self.seed is not None:
+            command.extend(["--seed", str(self.seed)])
         env = os.environ.copy()
         if self.cuda_visible_devices:
             env["CUDA_VISIBLE_DEVICES"] = self.cuda_visible_devices

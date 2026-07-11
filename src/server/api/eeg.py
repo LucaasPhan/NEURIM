@@ -57,6 +57,8 @@ class EEGConnectionManager:
         self._last_connected_at: datetime | None = None
         self._last_calibrated_at: datetime | None = None
         self._next_retry_at: datetime | None = None
+        self._last_health_check_monotonic = 0.0
+        self._health_check_interval_s = 5.0
 
     def start(self) -> None:
         with self._lock:
@@ -92,6 +94,7 @@ class EEGConnectionManager:
         return self.status()
 
     def status(self) -> dict[str, Any]:
+        self._refresh_connection_health()
         with self._lock:
             return {
                 "state": self._state,
@@ -182,6 +185,34 @@ class EEGConnectionManager:
                 pass
         self._source = None
         self._reward_source = None
+
+    def _refresh_connection_health(self) -> None:
+        with self._lock:
+            if self._state != "ready" or self._source is None:
+                return
+            now = time.monotonic()
+            if now - self._last_health_check_monotonic < self._health_check_interval_s:
+                return
+            self._last_health_check_monotonic = now
+            source = self._source
+            if not hasattr(source, "is_headset_connected"):
+                return
+        try:
+            connected = source.is_headset_connected()
+        except Exception as exc:  # noqa: BLE001
+            connected = False
+            error = str(exc)
+        else:
+            error = "Cortex no longer reports the headset as connected"
+        if connected:
+            return
+        with self._lock:
+            if self._source is source:
+                self._close_source_locked()
+                self._state = "error"
+                self._last_error = error
+                self._next_retry_at = _utc_now() + timedelta(seconds=self.retry_interval_s)
+        _log(f"EPOC X connection lost: {error}")
 
     @staticmethod
     def _default_source() -> EmotivCortexSource:

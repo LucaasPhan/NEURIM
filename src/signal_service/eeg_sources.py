@@ -7,6 +7,7 @@ these is plugged in - that's the point of the abstraction.
 from __future__ import annotations
 
 import os
+import threading
 import time
 from typing import Any, Iterator, Protocol
 
@@ -99,6 +100,7 @@ class EmotivCortexSource:
         self._cortex_token: str | None = None
         self._session_id: str | None = None
         self._req_id = 0
+        self._io_lock = threading.RLock()
         # Column labels for the eeg data array, captured from the subscribe
         # response - Cortex sends [COUNTER, INTERPOLATED, <channels>, RAW_CQ,
         # MARKER_HARDWARE, MARKERS], so channels must be mapped by label, not
@@ -117,14 +119,15 @@ class EmotivCortexSource:
         payload = {"jsonrpc": "2.0", "id": req_id, "method": method}
         if params is not None:
             payload["params"] = params
-        self._ws.send(json.dumps(payload))
-        while True:
-            response = json.loads(self._ws.recv())
-            if response.get("id") != req_id:
-                continue
-            if "error" in response:
-                raise RuntimeError(self._format_api_error(method, response["error"]))
-            return response["result"]
+        with self._io_lock:
+            self._ws.send(json.dumps(payload))
+            while True:
+                response = json.loads(self._ws.recv())
+                if response.get("id") != req_id:
+                    continue
+                if "error" in response:
+                    raise RuntimeError(self._format_api_error(method, response["error"]))
+                return response["result"]
 
     @staticmethod
     def _format_api_error(method: str, error: dict) -> str:
@@ -297,7 +300,8 @@ class EmotivCortexSource:
 
         assert self._ws is not None, "call connect() first"
         while True:
-            msg = json.loads(self._ws.recv())
+            with self._io_lock:
+                msg = json.loads(self._ws.recv())
             if "eeg" not in msg:
                 continue
             values = msg["eeg"]
@@ -315,6 +319,12 @@ class EmotivCortexSource:
                 sample = dict(zip(channels, values[2:]))
             t = msg.get("time", time.time())
             yield t, sample
+
+    def is_headset_connected(self) -> bool:
+        if self._ws is None or not self.headset_id:
+            return False
+        matches = self._call("queryHeadsets", {"id": self.headset_id})
+        return bool(matches and matches[0].get("status") == "connected")
 
     def close(self) -> None:
         # Unpublished Cortex apps are limited to one active session at a

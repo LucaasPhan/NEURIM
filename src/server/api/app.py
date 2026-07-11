@@ -37,6 +37,11 @@ def create_app(
             python_executable=api_settings.diffusion_python,
             cuda_visible_devices=api_settings.diffusion_cuda_visible_devices,
             model=api_settings.diffusion_model,
+            steps=api_settings.diffusion_steps,
+            guidance_scale=api_settings.diffusion_guidance_scale,
+            temperature=api_settings.diffusion_temperature,
+            size=api_settings.diffusion_size,
+            seed=api_settings.diffusion_seed,
             startup_timeout_s=api_settings.diffusion_startup_timeout_s,
         )
     manager = session_manager or SessionManager(
