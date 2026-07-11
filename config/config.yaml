@@ -30,10 +30,10 @@ faa:
   channel_left: "F3"
   channel_right: "F4"
   channel_pairs:
-    # - ["F7", "F8"]
-    # - ["AF3", "AF4"]
+    - ["F7", "F8"]
+    - ["AF3", "AF4"]
     - ["F3", "F4"]
-    # - ["FC5", "FC6"]
+    - ["FC5", "FC6"]
   pair_weights:
     "F3/F4": 1.0
     "F7/F8": 0.75
@@ -53,11 +53,11 @@ faa:
 # budget - see tests/test_optimizer.py and the tuning notes in README.md.
 optimizer:
   search_dims: 8
-  step_size_explore: 0.2
+  step_size_explore: 0.25
   step_size_refine_min: 0.03
   step_momentum: 0.6
   noise_threshold: 0.05     # reward diffs smaller than this are EEG jitter
-  reward_window_steps: 4    # ~1s of FAA readings averaged per accept/reject
+  reward_window_steps: 8    # ~1s of FAA readings averaged per accept/reject
   bounds: 1               # was 3.0; z is in anchor-bank std units (PCA whitens
                             # per axis), so +/-1.5 still reaches every anchor
                             # while cutting the box corner from ~8.5 to ~4.2 std,
@@ -70,8 +70,8 @@ optimizer:
 # CALIBRATE -> EXPLORE -> REFINE -> SETTLE, with RECOVER as an escape hatch.
 state_machine:
   calibrate_duration_s: 30.0
-  settle_reward_threshold: 0.30       # was 0.55 - realistic plateau for a clipped FAA z-score
-  settle_reward_std_threshold: 0.15   # plateau tightness: SETTLE needs recent reward std below this
+  settle_reward_threshold: 0.25       # was 0.55 - realistic plateau for a clipped FAA z-score
+  settle_reward_std_threshold: 0.2   # plateau tightness: SETTLE needs recent reward std below this
   settle_motion_threshold: 0.1
   settle_patience_steps: 3
   min_steps_before_settle: 20
@@ -116,16 +116,15 @@ generator:
   # (PCA yields up to n_prompts-1 meaningful directions after centering).
   anchor_prompts:
   - "A white cat sits centered against a plain neutral background, shown at medium distance under soft studio lighting in a realistic style, with a calm expression and a forward-facing gaze."
-  - "A cream cat sits centered against a plain neutral background, shown at medium distance under soft studio lighting in a realistic style, with a relaxed expression and a slightly left-facing gaze."
-  - "A pale orange cat sits centered against a plain neutral background, shown at medium distance under soft studio lighting in a realistic style, with a gentle expression and a slightly right-facing gaze."
-  - "A orange tabby cat sits centered against a plain neutral background, shown at medium distance under soft studio lighting in a realistic style, with a curious expression and a forward-facing gaze."
-  - "A sgray tabby cat sits centered against a plain neutral background, shown at medium distance under soft studio lighting in a realistic style, with an attentive expression and a slightly left-facing gaze."
-  - "A solid gray cat sits centered against a plain neutral background, shown at medium distance under soft studio lighting in a realistic style, with an alert expression and a forward-facing gaze."
-  - "A bluish-gray cat sits centered against a plain neutral background, shown at medium distance under soft studio lighting in a realistic style, with an observant expression and a slightly right-facing gaze."
-  - "A dark brown cat sits centered against a plain neutral background, shown at medium distance under soft studio lighting in a realistic style, with a composed expression and a forward-facing gaze." 
-  - "A black cat sits centered against a plain neutral background, shown at medium distance under soft studio lighting in a realistic style, with a quiet expression and a slightly left-facing gaze."
-  - "A black-and-white cat sits centered against a plain neutral background, shown at medium distance under soft studio lighting in a realistic style, with a calm expression and a slightly right-facing gaze."
-
+  - "A cream cat sits centered against a plain neutral background, shown at medium distance under soft studio lighting in a realistic style, with a calm expression and a forward-facing gaze."
+  - "A pale orange cat sits centered against a plain neutral background, shown at medium distance under soft studio lighting in a realistic style, with a calm expression and a forward-facing gaze."
+  - "An orange tabby cat sits centered against a plain neutral background, shown at medium distance under soft studio lighting in a realistic style, with a calm expression and a forward-facing gaze."
+  - "A gray tabby cat sits centered against a plain neutral background, shown at medium distance under soft studio lighting in a realistic style, with a calm expression and a forward-facing gaze."
+  - "A solid gray cat sits centered against a plain neutral background, shown at medium distance under soft studio lighting in a realistic style, with a calm expression and a forward-facing gaze."
+  - "A bluish-gray cat sits centered against a plain neutral background, shown at medium distance under soft studio lighting in a realistic style, with a calm expression and a forward-facing gaze."
+  - "A dark brown cat sits centered against a plain neutral background, shown at medium distance under soft studio lighting in a realistic style, with a calm expression and a forward-facing gaze."
+  - "A black cat sits centered against a plain neutral background, shown at medium distance under soft studio lighting in a realistic style, with a calm expression and a forward-facing gaze."
+  - "A black-and-white cat sits centered against a plain neutral background, shown at medium distance under soft studio lighting in a realistic style, with a calm expression and a forward-facing gaze."
 loop:
   target_latency_ms: 250          # perceive -> acquire -> decode -> generate, end to end
   optimizer_step_interval_s: 1.0   # matches faa.update_interval_s * reward_window_steps
