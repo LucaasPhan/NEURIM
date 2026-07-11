@@ -53,7 +53,7 @@ def test_diffusion_client_uses_manifest_and_render_contracts():
     ]
 
 
-def test_frame_store_writes_live_and_snapshots_atomically(tmp_path):
+def test_frame_store_writes_live_and_snapshots(tmp_path):
     store = FrameStore(tmp_path)
     png = _png_bytes()
 
@@ -64,4 +64,3 @@ def test_frame_store_writes_live_and_snapshots_atomically(tmp_path):
     assert (tmp_path / "live_frame.png").read_bytes() == png
     assert (tmp_path / "session_start.png").read_bytes() == png
     assert (tmp_path / "session_end.png").read_bytes() == png
-    assert not list(tmp_path.glob("*.tmp"))

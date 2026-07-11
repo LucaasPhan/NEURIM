@@ -1,4 +1,4 @@
-"""Atomic live-frame and session snapshot storage."""
+"""Live-frame and session snapshot storage."""
 
 from __future__ import annotations
 
@@ -25,7 +25,5 @@ class FrameStore:
     def save(self, png_bytes: bytes, name: str) -> Path:
         self.directory.mkdir(parents=True, exist_ok=True)
         destination = self.directory / name
-        temporary = destination.with_suffix(destination.suffix + ".tmp")
-        temporary.write_bytes(png_bytes)
-        temporary.replace(destination)
+        destination.write_bytes(png_bytes)
         return destination
