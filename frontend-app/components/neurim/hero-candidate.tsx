@@ -3,16 +3,24 @@ import { stateBadge, type FrameState } from "@/lib/neurim-types";
 
 export function HeroCandidate({
   frameSrc,
+  finalSrc = null,
+  completed = false,
   state,
   fps,
   modelLabel = "SD-Turbo",
 }: {
   frameSrc: string | null;
+  finalSrc?: string | null;
+  completed?: boolean;
   state: FrameState;
   fps: number;
   modelLabel?: string;
 }) {
-  const isRecover = state === "recover";
+  // Once the run finishes, show the OpenAI-cleaned image instead of the last
+  // morphed live frame.
+  const showFinal = completed && Boolean(finalSrc);
+  const src = showFinal ? finalSrc : frameSrc;
+  const isRecover = state === "recover" && !showFinal;
 
   return (
     <div
@@ -21,11 +29,11 @@ export function HeroCandidate({
         "shadow-[0_26px_60px_rgba(16,24,40,.12),0_0_80px_rgba(63,98,246,.10)] dark:shadow-[0_40px_120px_rgba(0,0,0,.55),0_0_80px_rgba(63,98,246,.18)]",
       )}
     >
-      {frameSrc ? (
+      {src ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={frameSrc}
-          alt="Generated NEURIM candidate frame"
+          src={src}
+          alt={showFinal ? "Finalized NEURIM image" : "Generated NEURIM candidate frame"}
           className="h-full w-full object-cover"
         />
       ) : (
@@ -47,7 +55,7 @@ export function HeroCandidate({
         <span className={cn(isRecover ? "text-[#e8b24a]" : "text-approach dark:text-approach-bright")}>
           ◆
         </span>
-        <span>{stateBadge(state)}</span>
+        <span>{showFinal ? "FINAL" : stateBadge(state)}</span>
       </div>
 
       <div
@@ -58,7 +66,7 @@ export function HeroCandidate({
           "dark:text-[#dfe1e6] dark:bg-black/45 dark:border-white/10 dark:backdrop-blur",
         )}
       >
-        {modelLabel} · {fps} fps
+        {showFinal ? "OpenAI · finalized" : `${modelLabel} · ${fps} fps`}
       </div>
     </div>
   );

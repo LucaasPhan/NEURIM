@@ -1,8 +1,13 @@
+import time
+from types import SimpleNamespace
+
 from fastapi.testclient import TestClient
 
+from src.common.config import Config
 from src.generator.prompt_curation import PROMPT_CURATION_VERSION, PromptCurationManifest
 from src.server.api.app import create_app
 from src.server.api.manager import SessionManager
+from src.session.frame_store import FrameStore
 
 
 def _manifest(prompt: str = "cat") -> PromptCurationManifest:
@@ -187,6 +192,85 @@ def test_rejects_invalid_server_url(tmp_path):
     response = client.post("/session/start", json={"prompt": "cat", "server_url": "localhost:8766"})
 
     assert response.status_code == 422
+
+
+class ReadyEEGManager(FakeEEGManager):
+    def __init__(self, reward_source):
+        super().__init__(ready=True)
+        self._reward_source = reward_source
+
+    def require_ready_reward_source(self):
+        return self._reward_source
+
+
+class FakeRewardSource:
+    def read_reward(self):
+        return SimpleNamespace(r=0.0, raw_faa=0.0)
+
+
+class RecordingFinalizer:
+    def __init__(self):
+        self.calls = []
+
+    def finalize(self, png, subject):
+        self.calls.append((png, subject))
+        return b"FINAL:" + png
+
+
+def test_real_session_runs_finalize_and_writes_target_frame(tmp_path, monkeypatch):
+    # A real (non-mock) session captures snapshots, so the last frame flows
+    # through the finalizer and lands as target_frame.png for the frontend.
+    finalizer = RecordingFinalizer()
+    eeg = ReadyEEGManager(FakeRewardSource())
+    manager = SessionManager(
+        repo_root=tmp_path,
+        eeg_manager=eeg,
+        curation_service=FakeCurationService(),
+        diffusion_client_factory=lambda _url, _timeout: FakeDiffusionClient(),
+        finalizer_factory=lambda: finalizer,
+    )
+    # Redirect FrameStore's default output dir into tmp so the assertion is isolated.
+    monkeypatch.setattr("src.server.api.manager.FrameStore", lambda: FrameStore(tmp_path))
+    client = TestClient(create_app(session_manager=manager, eeg_manager=eeg))
+
+    response = client.post("/session/start", json={"prompt": "cat", "mock": False})
+    assert response.status_code == 200
+
+    # The optimizer stops on its own at max_steps; wait for the thread to exit.
+    manager.stop()
+    for _ in range(50):
+        if not manager.status()["running"]:
+            break
+        time.sleep(0.05)
+
+    assert manager.status()["running"] is False
+    raw = FakeDiffusionClient().render(None, None)
+    assert (tmp_path / "session_end.png").read_bytes() == raw
+    assert (tmp_path / "target_frame.png").read_bytes() == b"FINAL:" + raw
+    assert finalizer.calls and finalizer.calls[0][1] == "cat"
+
+
+def test_make_finalizer_uses_injected_factory(tmp_path):
+    sentinel = object()
+    manager = SessionManager(
+        repo_root=tmp_path,
+        curation_service=FakeCurationService(),
+        finalizer_factory=lambda: sentinel,
+    )
+
+    assert manager._make_finalizer() is sentinel
+
+
+def test_make_finalizer_returns_none_when_disabled(tmp_path):
+    config = Config()
+    config.generator.finalize_enabled = False
+    manager = SessionManager(
+        repo_root=tmp_path,
+        curation_service=FakeCurationService(),
+        config=config,
+    )
+
+    assert manager._make_finalizer() is None
 
 
 def test_manifest_mismatch_returns_conflict(tmp_path):

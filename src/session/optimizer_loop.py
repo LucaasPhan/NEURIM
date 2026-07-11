@@ -20,12 +20,16 @@ class OptimizerRenderLoop:
         client: DiffusionClient | None,
         frame_store: FrameStore,
         capture_snapshots: bool = False,
+        finalizer=None,
+        finalize_prompt: str = "",
     ) -> None:
         self.config = config
         self.frames_per_step = frames_per_step
         self.client = client
         self.frame_store = frame_store
         self.capture_snapshots = capture_snapshots
+        self.finalizer = finalizer
+        self.finalize_prompt = finalize_prompt
         self.optimizer = OptimizerService(config)
         self.optimizer.notify_calibrated()
         self.interpolator = Interpolator()
@@ -52,3 +56,16 @@ class OptimizerRenderLoop:
             return
         png = self.client.render(self.optimizer.current_z(), self.config.generator.frame_size)
         self.frame_store.save_end(png)
+        # Finalize the last morphed frame through OpenAI, then hand it to the
+        # frontend. On any failure the raw frame is still delivered so the
+        # session always ends with something to show.
+        self.frame_store.save_target(self._finalize(png))
+
+    def _finalize(self, png: bytes) -> bytes:
+        if self.finalizer is None:
+            return png
+        try:
+            return self.finalizer.finalize(png, self.finalize_prompt)
+        except Exception as exc:  # noqa: BLE001
+            print(f"[optimizer-loop] image finalize failed, using raw final frame: {exc}")
+            return png

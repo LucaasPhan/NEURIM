@@ -25,6 +25,10 @@ export interface NeurimSession {
   fps: number;
   reward: number;
 
+  // The OpenAI-finalized image, fetched once the backend session completes.
+  finalSrc: string | null;
+  completed: boolean;
+
   wsUrl: string;
   setWsUrl: (url: string) => void;
 
@@ -54,13 +58,72 @@ export function useSession(): NeurimSession {
   const [timedOut, setTimedOut] = useState(false);
   const revealTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // The finalized image the backend writes once the run ends (target_frame.png,
+  // served by /api/target-frame). Held as an object URL so we can revoke it.
+  const [finalSrc, setFinalSrc] = useState<string | null>(null);
+  const [completed, setCompleted] = useState(false);
+  const finalUrlRef = useRef<string | null>(null);
+
   const stream = useFrameStream(active);
+
+  const revokeFinal = useCallback(() => {
+    if (finalUrlRef.current) {
+      URL.revokeObjectURL(finalUrlRef.current);
+      finalUrlRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     return () => {
       if (revealTimer.current) clearTimeout(revealTimer.current);
+      revokeFinal();
     };
-  }, []);
+  }, [revokeFinal]);
+
+  // While a real (non-offline) session runs, poll the backend for completion.
+  // exit_code flips from null to a value only once THIS session's thread exits,
+  // by which point save_final_frame() has already written the finalized image.
+  useEffect(() => {
+    if (!active || offline || !sessionId || completed) return;
+    let cancelled = false;
+
+    const loadFinalFrame = async () => {
+      try {
+        const res = await fetch(`/api/target-frame?ts=${Date.now()}`, { cache: "no-store" });
+        if (!res.ok || cancelled) return;
+        const url = URL.createObjectURL(await res.blob());
+        revokeFinal();
+        finalUrlRef.current = url;
+        setFinalSrc(url);
+        setStatusText("Final image ready");
+      } catch {
+        // Backend/file not reachable — leave the live/mock frame in place.
+      }
+    };
+
+    const poll = async () => {
+      try {
+        const res = await fetch("/api/session-status", { cache: "no-store" });
+        if (!res.ok || cancelled) return;
+        const status = (await res.json()) as { running?: boolean; exit_code?: number | null };
+        if (!status.running && status.exit_code != null) {
+          // Session ended — stop polling (via the `completed` effect dep) and
+          // swap in the finalized image if the backend produced one.
+          setCompleted(true);
+          await loadFinalFrame();
+        }
+      } catch {
+        // api_server.py down — keep polling; the mock path still shows something.
+      }
+    };
+
+    const id = setInterval(poll, 2000);
+    poll();
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [active, offline, sessionId, completed, revokeFinal]);
 
   const startSession = useCallback(async (rawPrompt: string) => {
     const prompt = rawPrompt.trim();
@@ -72,6 +135,9 @@ export function useSession(): NeurimSession {
     setIsSubmitting(true);
     setActive(true);
     setTimedOut(false);
+    setCompleted(false);
+    revokeFinal();
+    setFinalSrc(null);
     setStatusText("Reading your signal — rendering the first frame");
 
     // Fall back to the mock frame if auto-connect delivers nothing in time.
@@ -107,7 +173,7 @@ export function useSession(): NeurimSession {
     } finally {
       setIsSubmitting(false);
     }
-  }, []);
+  }, [revokeFinal]);
 
   const reset = useCallback(() => {
     if (revealTimer.current) clearTimeout(revealTimer.current);
@@ -119,7 +185,10 @@ export function useSession(): NeurimSession {
     setStatusText("Ready");
     setOffline(false);
     setMock(null);
-  }, [stream]);
+    setCompleted(false);
+    revokeFinal();
+    setFinalSrc(null);
+  }, [stream, revokeFinal]);
 
   // Derive the phase: a real frame OR the fallback timer ends the processing beat.
   const revealed = timedOut || stream.frame != null;
@@ -143,6 +212,8 @@ export function useSession(): NeurimSession {
     frameSrc,
     fps,
     reward,
+    finalSrc,
+    completed,
     wsUrl: stream.url,
     setWsUrl: stream.setUrl,
     showBrain,
