@@ -35,8 +35,15 @@ class RemoteDiffusionSupervisorClient:
             timeout=self.timeout_s,
         )
         if response.status_code != 200:
+            detail = response.text[:300]
+            try:
+                payload = response.json()
+                if isinstance(payload, dict) and payload.get("detail"):
+                    detail = str(payload["detail"])
+            except Exception:
+                pass
             raise RuntimeError(
-                f"diffusion supervisor returned {response.status_code}: {response.text[:300]}"
+                f"diffusion supervisor returned {response.status_code}: {detail}"
             )
         payload = response.json()
         render_url = str(payload.get("render_url", "")).strip()

@@ -118,13 +118,17 @@ class SessionManager:
             with self._lock:
                 self._logs.append("[api] restarting managed diffusion server")
             try:
-                self.diffusion_process_manager.restart(manifest_path, manifest)
+                restart_result = self.diffusion_process_manager.restart(manifest_path, manifest)
             except Exception as exc:  # noqa: BLE001
+                self._append_log(f"[api] managed diffusion startup failed: {exc}")
                 raise HTTPException(
                     status_code=502,
                     detail=f"managed diffusion startup failed: {exc}",
                 ) from exc
             server_url = self.diffusion_process_manager.base_url
+            with self._lock:
+                self._logs.append(f"[api] managed diffusion render URL: {server_url}")
+                self._logs.append(f"[api] managed diffusion restart response: {restart_result}")
         client = self.diffusion_client_factory(server_url, 30.0)
         remote_manifest = self._load_remote_manifest(client)
         self._validate_remote_manifest(manifest, remote_manifest)

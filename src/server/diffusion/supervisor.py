@@ -89,9 +89,19 @@ def create_app(
             output_dir.mkdir(parents=True, exist_ok=True)
             manifest_path.write_text(json.dumps(manifest_payload, indent=2) + "\n", encoding="utf-8")
             manifest = load_prompt_session_manifest(manifest_path)
+            print(
+                f"[diffusion-supervisor] restarting diffusion for prompt={manifest.user_prompt!r} "
+                f"manifest={manifest_path}",
+                flush=True,
+            )
             remote_manifest = manager.restart(manifest_path)
         except Exception as exc:  # noqa: BLE001
+            print(f"[diffusion-supervisor] restart failed: {exc}", flush=True)
             raise HTTPException(status_code=502, detail=str(exc)) from exc
+        print(
+            f"[diffusion-supervisor] diffusion ready render_url={public_render_url}",
+            flush=True,
+        )
         return {
             "ok": True,
             "render_url": public_render_url,
