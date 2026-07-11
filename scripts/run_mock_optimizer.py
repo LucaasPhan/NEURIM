@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Mock optimizer client: drive run_streamdiffusion_server.py with a z-stream
+"""Mock optimizer client: drive a diffusion /render server with a z-stream
 that naturally converges onto a fixed target image, so you can watch the real
 convergence process morph on the server without EEG or a headset.
 
@@ -14,13 +14,16 @@ Each accepted step, it interpolates toward the new candidate (exactly like
 LocalOrchestrator does) and POSTs each interpolated z to the server's /render,
 saving the returned PNG - giving a smooth morph that settles on the target.
 
-    # against a real StreamDiffusion server on a GPU box:
+    # against the generalized anchor server on a GPU box:
+    python scripts/run_mock_optimizer.py --server-url http://GPUHOST:8766 --seed 3
+
+    # against the old StreamDiffusion server on a GPU box:
     python scripts/run_mock_optimizer.py --server-url http://GPUHOST:8766 --seed 3
 
     # verify the converging trajectory with no server (prints z + distance):
     python scripts/run_mock_optimizer.py --dry-run --seed 3
 
-    # push the config's anchor prompts to the server first:
+    # push the config's anchor prompts to the old /anchors-capable server first:
     python scripts/run_mock_optimizer.py --server-url http://GPUHOST:8766 --set-anchors
 """
 
@@ -40,7 +43,8 @@ from src.generator.service import Interpolator
 from src.optimizer.service import OptimizerService
 from src.signal_service.fake_reward import ScriptedRewardSource
 
-OUT_DIR = Path(__file__).resolve().parents[1] / "data" / "processed" / "mock_stream"
+PROCESSED_DIR = Path(__file__).resolve().parents[1] / "data" / "processed"
+ARCHIVE_DIR = PROCESSED_DIR / "mock_stream"
 
 DEFAULT_BREEDS = [
     "Golden Retriever",
@@ -100,6 +104,28 @@ class BreedTargetRewardSource:
         )
 
 
+def _save_frame(png_bytes: bytes, name: str = "live_frame.png") -> None:
+    PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
+    with open(PROCESSED_DIR / name, "wb") as f:
+        f.write(png_bytes)
+
+
+class _SessionSnapshot:
+    """Mirror the real EEG optimizer's live/start/end frame capture behavior."""
+
+    def __init__(self):
+        self._start_saved = False
+
+    def on_frame(self, png_bytes: bytes) -> None:
+        _save_frame(png_bytes)
+        if not self._start_saved:
+            _save_frame(png_bytes, "session_start.png")
+            self._start_saved = True
+
+    def save_end(self, png_bytes: bytes) -> None:
+        _save_frame(png_bytes, "session_end.png")
+
+
 def _post_render(base_url: str, z: np.ndarray, frame_size: int, timeout: float) -> bytes:
     import requests
 
@@ -130,7 +156,8 @@ def main() -> None:
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument("--server-url", default="http://localhost:8766",
-                        help="base URL of run_streamdiffusion_server.py")
+                        help="base URL of the diffusion /render server "
+                             "(e.g. run_general_stable_diffusion.py)")
     parser.add_argument("--seed", type=int, default=0, help="which fixed target image to converge to")
     parser.add_argument("--algorithm", choices=["hill_climb", "es_1p1", "gp_bo", "latent_turbo"], default=None)
     parser.add_argument("--noise", type=float, default=0.05, help="reward noise std (higher = harder)")
@@ -188,7 +215,7 @@ def main() -> None:
     interpolator.set_target(np.asarray(optimizer.pending_candidate(), dtype=float))
 
     if not args.dry_run:
-        OUT_DIR.mkdir(parents=True, exist_ok=True)
+        ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
         if args.set_anchors:
             _post_anchors(args.server_url, list(config.generator.anchor_prompts), args.timeout)
 
@@ -199,6 +226,7 @@ def main() -> None:
     print("-" * 46)
 
     frame_no = 0
+    snapshot = _SessionSnapshot()
     start_dist = float(np.linalg.norm(optimizer.current_z() - target))
     max_ticks = config.state_machine.max_steps * config.optimizer.reward_window_steps + 50
 
@@ -208,8 +236,8 @@ def main() -> None:
             frame_no += 1
             return
         png = _post_render(args.server_url, z, frame_size, args.timeout)
-        (OUT_DIR / f"frame_{frame_no:04d}.png").write_bytes(png)
-        (OUT_DIR / "mock_live.png").write_bytes(png)  # overwrite target for live viewers
+        snapshot.on_frame(png)
+        (ARCHIVE_DIR / f"frame_{frame_no:04d}.png").write_bytes(png)
         frame_no += 1
 
     try:
@@ -235,7 +263,7 @@ def main() -> None:
         print(f"\n[mock-opt] interrupted ({exc})")
     except Exception as exc:  # noqa: BLE001 - surface connection/render errors clearly
         sys.exit(f"[mock-opt] server error: {exc}\n"
-                 f"          is run_streamdiffusion_server.py listening at {args.server_url}?")
+                 f"          is the diffusion render server listening at {args.server_url}?")
 
     final_state = optimizer.state_machine.state
     if args.target_breed is not None:
@@ -245,6 +273,11 @@ def main() -> None:
     else:
         final_dist = float(np.linalg.norm(optimizer.current_z() - target))
         closer = 1.0 - final_dist / start_dist if start_dist > 0 else 0.0
+
+    if not args.dry_run:
+        final_png = _post_render(args.server_url, optimizer.current_z(), frame_size, args.timeout)
+        snapshot.save_end(final_png)
+
     print()
     if args.target_breed is not None:
         print(f"[mock-opt] final state={final_state}  target_weight={closer:.0%}  "
@@ -253,7 +286,9 @@ def main() -> None:
         print(f"[mock-opt] final state={final_state}  started {start_dist:.2f} -> ended {final_dist:.2f} "
               f"({closer:.0%} closer)  frames emitted={frame_no}")
     if not args.dry_run:
-        print(f"[mock-opt] frames in {OUT_DIR}/  (frame_0000.png ... , live at mock_live.png)")
+        print(f"[mock-opt] saved {PROCESSED_DIR / 'live_frame.png'}, "
+              f"{PROCESSED_DIR / 'session_start.png'}, and {PROCESSED_DIR / 'session_end.png'}")
+        print(f"[mock-opt] archived frames in {ARCHIVE_DIR}/  (frame_0000.png ...)")
     if final_state == "settle":
         print("[mock-opt] CONVERGED - the z-stream locked onto the target image.")
     else:
