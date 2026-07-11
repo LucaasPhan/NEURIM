@@ -413,5 +413,65 @@
     "mtime": 1783763275.2226102,
     "ast_hash": "d5fb1aabb1624d95eb48ebcb375c1869",
     "semantic_hash": "d5fb1aabb1624d95eb48ebcb375c1869"
+  },
+  "AGENTS.md": {
+    "mtime": 1783764170.6554601,
+    "ast_hash": "f07b9404a71a45b783c9ebe550db4459",
+    "semantic_hash": ""
+  },
+  "KNOWN_ISSUES.md": {
+    "mtime": 1783750359.860657,
+    "ast_hash": "35010a27b4f33901b74b7733738a01c3",
+    "semantic_hash": ""
+  },
+  "PLAN_run_stablediffusion.md": {
+    "mtime": 1783763275.2207499,
+    "ast_hash": "b486f8f8681183ee51fde4be898441d4",
+    "semantic_hash": ""
+  },
+  "README.md": {
+    "mtime": 1783746604.969471,
+    "ast_hash": "d29404b5193de7799fb120246f18b73e",
+    "semantic_hash": ""
+  },
+  "config/config.yaml": {
+    "mtime": 1783763275.2212515,
+    "ast_hash": "c4425487a8cc0292fa658e1599dad143",
+    "semantic_hash": ""
+  },
+  "frontend/dog_demo.html": {
+    "mtime": 1783507156.1967807,
+    "ast_hash": "f8877a915a9fdc3068429fdb8dab1005",
+    "semantic_hash": ""
+  },
+  "frontend/live_view.html": {
+    "mtime": 1783619022.059266,
+    "ast_hash": "0489ea71671e061d84b0772eb42dbe44",
+    "semantic_hash": ""
+  },
+  "latestPR.md": {
+    "mtime": 1783746604.9703755,
+    "ast_hash": "844f613d5b3ad3d9bfe0d944c6abf819",
+    "semantic_hash": ""
+  },
+  "requirements-diffusion.txt": {
+    "mtime": 1783625124.327964,
+    "ast_hash": "1d3b804e40c07cd52ead944895f7feb8",
+    "semantic_hash": ""
+  },
+  "requirements.txt": {
+    "mtime": 1783624179.732315,
+    "ast_hash": "e8179e2e2a5720436d4c7beeb0282bc2",
+    "semantic_hash": ""
+  },
+  "mock_final.png": {
+    "mtime": 1783746604.9706876,
+    "ast_hash": "8cea5ae333795ac892a6518cbb4693fe",
+    "semantic_hash": ""
+  },
+  "mock_start.png": {
+    "mtime": 1783746604.971912,
+    "ast_hash": "9da38eabe593f6c58935e2c9e4e05041",
+    "semantic_hash": ""
   }
 }
