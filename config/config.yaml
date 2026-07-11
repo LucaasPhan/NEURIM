@@ -52,20 +52,23 @@ faa:
 # converges noticeably more reliably than 12+ within a demo-length step
 # budget - see tests/test_optimizer.py and the tuning notes in README.md.
 optimizer:
-  # For run_stablediffusion.py this MUST equal len(--breeds): every z dimension
-  # directly IS one breed's weight (no PCA compression), so dimensionality is
-  # exact. 7 == the 7 default dog breeds in run_stablediffusion.py's
-  # DEFAULT_BREEDS. (The old PCA path in run_streamdiffusion_server.py used 8 -
-  # the favorable end of the spec's 8-16 range - which is unrelated here.)
+  # For run_stablediffusion.py OR run_general_stable_diffusion.py this MUST
+  # equal the server's anchor count: every z dimension directly IS one
+  # breed/anchor weight (no PCA compression), so dimensionality is exact.
+  # 7 == the current compatibility contract for both the dog-breed runner and
+  # the generalized prompt-session runner. (The old PCA path in
+  # run_streamdiffusion_server.py used 8 - the favorable end of the spec's
+  # 8-16 range - which is unrelated here.)
   search_dims: 7
   step_size_explore: 1.0
   step_size_refine_min: 0.03
   step_momentum: 0.6
   noise_threshold: 0.05     # reward diffs smaller than this are EEG jitter
   reward_window_steps: 8    # ~2s of FAA readings averaged per accept/reject
-  bounds: 1.5               # breed-weight logits need enough range to let one
+  bounds: 1.5               # anchor-weight logits need enough range to let one
                             # anchor dominate after softmax; pair with
-                            # run_stablediffusion.py --temperature 5-8.
+                            # run_stablediffusion.py or
+                            # run_general_stable_diffusion.py --temperature 5-8.
   algorithm: "latent_turbo"   # "hill_climb" | "es_1p1" | "gp_bo" | "latent_turbo"
                             # latent_turbo = Noise-Aware Latent TuRBO: local GP +
                             # heteroscedastic noise + Thompson sampling + adaptive

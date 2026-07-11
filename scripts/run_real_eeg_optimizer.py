@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
-"""Real-EEG optimizer client: drive run_streamdiffusion_server.py with a
-z-stream produced by your ACTUAL brain signal, watching convergence morph on
-the server. Identical to run_mock_optimizer.py except the reward comes from
-real (or --mock) EEG via FAARewardComputer - see test_faa_stream.py - instead
-of a scripted target. Same real OptimizerService, state machine, and
-Interpolator either way; only the reward source differs.
+"""Real-EEG optimizer client: drive a diffusion /render server with a z-stream
+produced by your ACTUAL brain signal, watching convergence morph on the
+server. Identical to run_mock_optimizer.py except the reward comes from real
+(or --mock) EEG via FAARewardComputer - see test_faa_stream.py - instead of a
+scripted target. Same real OptimizerService, state machine, and Interpolator
+either way; only the reward source differs.
 
-    # real EPOC X headset, real StreamDiffusion server on a GPU box:
+    # real EPOC X headset, generalized anchor server on a GPU box:
+    python scripts/run_real_eeg_optimizer.py --server-url http://GPUHOST:8766
+
+    # real EPOC X headset, old StreamDiffusion server on a GPU box:
     python scripts/run_real_eeg_optimizer.py --server-url http://GPUHOST:8766
 
     # no headset needed, verify the wiring:
@@ -15,13 +18,15 @@ Interpolator either way; only the reward source differs.
     # no server needed either, verify EEG -> FAA -> optimizer only:
     python scripts/run_real_eeg_optimizer.py --mock --dry-run
 
-    # push the config's anchor prompts to the server first:
+    # push the config's anchor prompts to the old /anchors-capable server first:
     python scripts/run_real_eeg_optimizer.py --server-url http://GPUHOST:8766 --set-anchors
 
 NOTE: --set-anchors POSTs to /anchors, which only exists on run_diffusion_server.py
-(SDXL-Turbo) - run_streamdiffusion_server.py has no such endpoint yet, so this
-flag will fail against it. Edit config.yaml's anchor_prompts and restart the
-StreamDiffusion server instead.
+(SDXL-Turbo) - neither run_streamdiffusion_server.py nor
+run_general_stable_diffusion.py has such an endpoint, so this flag will fail
+against them. Edit config.yaml's anchor_prompts and restart the old
+StreamDiffusion server instead, or use a prompt-session manifest with
+run_general_stable_diffusion.py.
 """
 
 from __future__ import annotations
@@ -111,7 +116,8 @@ def main() -> None:
     parser.add_argument("--baseline", type=float, default=None,
                         help="rest-calibration seconds (default: config faa.baseline_duration_s)")
     parser.add_argument("--server-url", default="http://localhost:8766",
-                        help="base URL of run_streamdiffusion_server.py")
+                        help="base URL of the diffusion /render server "
+                             "(e.g. run_general_stable_diffusion.py)")
     parser.add_argument("--algorithm", choices=["hill_climb", "es_1p1", "gp_bo", "latent_turbo"], default=None)
     parser.add_argument("--frames-per-step", type=int, default=6,
                         help="interpolated frames rendered between optimizer steps")
@@ -198,7 +204,7 @@ def main() -> None:
             print("\n[real-eeg-opt] interrupted")
         except Exception as exc:  # noqa: BLE001 - surface connection/render errors clearly
             sys.exit(f"[real-eeg-opt] server error: {exc}\n"
-                     f"          is run_streamdiffusion_server.py listening at {args.server_url}?")
+                     f"          is the diffusion render server listening at {args.server_url}?")
 
         final_state = optimizer.state_machine.state
         final_step = optimizer.state_machine.step_index

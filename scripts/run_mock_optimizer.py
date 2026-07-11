@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Mock optimizer client: drive run_streamdiffusion_server.py with a z-stream
+"""Mock optimizer client: drive a diffusion /render server with a z-stream
 that naturally converges onto a fixed target image, so you can watch the real
 convergence process morph on the server without EEG or a headset.
 
@@ -14,13 +14,16 @@ Each accepted step, it interpolates toward the new candidate (exactly like
 LocalOrchestrator does) and POSTs each interpolated z to the server's /render,
 saving the returned PNG - giving a smooth morph that settles on the target.
 
-    # against a real StreamDiffusion server on a GPU box:
+    # against the generalized anchor server on a GPU box:
+    python scripts/run_mock_optimizer.py --server-url http://GPUHOST:8766 --seed 3
+
+    # against the old StreamDiffusion server on a GPU box:
     python scripts/run_mock_optimizer.py --server-url http://GPUHOST:8766 --seed 3
 
     # verify the converging trajectory with no server (prints z + distance):
     python scripts/run_mock_optimizer.py --dry-run --seed 3
 
-    # push the config's anchor prompts to the server first:
+    # push the config's anchor prompts to the old /anchors-capable server first:
     python scripts/run_mock_optimizer.py --server-url http://GPUHOST:8766 --set-anchors
 """
 
@@ -130,7 +133,8 @@ def main() -> None:
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument("--server-url", default="http://localhost:8766",
-                        help="base URL of run_streamdiffusion_server.py")
+                        help="base URL of the diffusion /render server "
+                             "(e.g. run_general_stable_diffusion.py)")
     parser.add_argument("--seed", type=int, default=0, help="which fixed target image to converge to")
     parser.add_argument("--algorithm", choices=["hill_climb", "es_1p1", "gp_bo", "latent_turbo"], default=None)
     parser.add_argument("--noise", type=float, default=0.05, help="reward noise std (higher = harder)")
@@ -235,7 +239,7 @@ def main() -> None:
         print(f"\n[mock-opt] interrupted ({exc})")
     except Exception as exc:  # noqa: BLE001 - surface connection/render errors clearly
         sys.exit(f"[mock-opt] server error: {exc}\n"
-                 f"          is run_streamdiffusion_server.py listening at {args.server_url}?")
+                 f"          is the diffusion render server listening at {args.server_url}?")
 
     final_state = optimizer.state_machine.state
     if args.target_breed is not None:
