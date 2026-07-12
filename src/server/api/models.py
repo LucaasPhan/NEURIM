@@ -23,3 +23,7 @@ class StartSessionRequest(BaseModel):
         if value is None:
             return None
         return value.strip() or None
+
+
+class DemoModeRequest(BaseModel):
+    enabled: bool
